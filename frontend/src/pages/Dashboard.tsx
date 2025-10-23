@@ -63,7 +63,7 @@ const Dashboard: React.FC = () => {
     } catch (error) {
       console.error('Error fetching stats:', error);
     }
-  }, [user]);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchHotelsAndRooms = React.useCallback(async () => {
     if (user?.role !== 'customer' && user?.role !== 'admin') return;
