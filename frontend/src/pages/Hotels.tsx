@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { mockHotels } from '../utils/mockData';
 
 interface Hotel {
   _id: string;
@@ -6,76 +7,53 @@ interface Hotel {
   location: string;
   description: string;
   amenities: string[];
-  images: string[];
-  totalRooms: number;
   rating: number;
 }
 
 const Hotels: React.FC = () => {
   const [hotels, setHotels] = useState<Hotel[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [showForm, setShowForm] = useState(false);
+  const [showModal, setShowModal] = useState(false);
   const [editingHotel, setEditingHotel] = useState<Hotel | null>(null);
   const [formData, setFormData] = useState({
     name: '',
     location: '',
     description: '',
-    amenities: '',
-    images: ''
+    amenities: ''
   });
 
   useEffect(() => {
-    fetchHotels();
+    // Load mock hotels
+    setHotels(mockHotels.map(h => ({ ...h, amenities: h.amenities || [] })));
   }, []);
 
-  const fetchHotels = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch('/api/hotels/manager/my-hotels', {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      const data = await response.json();
-      if (data.success) {
-        setHotels(data.hotels);
-      }
-    } catch (error) {
-      console.error('Error fetching hotels:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    try {
-      const token = localStorage.getItem('token');
-      const amenitiesArray = formData.amenities.split(',').map(a => a.trim()).filter(a => a);
-      
-      const url = editingHotel ? `/api/hotels/${editingHotel._id}` : '/api/hotels';
-      const method = editingHotel ? 'PUT' : 'POST';
-      
-      const response = await fetch(url, {
-        method,
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          ...formData,
-          amenities: amenitiesArray,
-          images: formData.images.split(',').map(img => img.trim()).filter(img => img)
-        })
-      });
+    
+    const hotelData = {
+      ...formData,
+      amenities: formData.amenities.split(',').map(a => a.trim()).filter(a => a),
+      rating: 4.0
+    };
 
-      if (response.ok) {
-        fetchHotels();
-        setShowForm(false);
-        setEditingHotel(null);
-        setFormData({ name: '', location: '', description: '', amenities: '', images: '' });
-      }
-    } catch (error) {
-      console.error('Error saving hotel:', error);
+    if (editingHotel) {
+      // Update hotel
+      setHotels(prev => prev.map(h => 
+        h._id === editingHotel._id 
+          ? { ...h, ...hotelData }
+          : h
+      ));
+    } else {
+      // Add new hotel
+      const newHotel = {
+        _id: Date.now().toString(),
+        ...hotelData
+      };
+      setHotels(prev => [...prev, newHotel]);
     }
+
+    setShowModal(false);
+    setEditingHotel(null);
+    setFormData({ name: '', location: '', description: '', amenities: '' });
   };
 
   const handleEdit = (hotel: Hotel) => {
@@ -84,179 +62,167 @@ const Hotels: React.FC = () => {
       name: hotel.name,
       location: hotel.location,
       description: hotel.description,
-      amenities: hotel.amenities.join(', '),
-      images: hotel.images?.join(', ') || ''
+      amenities: hotel.amenities.join(', ')
     });
-    setShowForm(true);
+    setShowModal(true);
   };
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = (id: string) => {
     if (window.confirm('Are you sure you want to delete this hotel?')) {
-      try {
-        const token = localStorage.getItem('token');
-        const response = await fetch(`/api/hotels/${id}`, {
-          method: 'DELETE',
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-        if (response.ok) {
-          fetchHotels();
-        }
-      } catch (error) {
-        console.error('Error deleting hotel:', error);
-      }
+      setHotels(prev => prev.filter(h => h._id !== id));
     }
   };
 
-  if (loading) return <div className="p-8">Loading...</div>;
+  const openAddModal = () => {
+    setEditingHotel(null);
+    setFormData({ name: '', location: '', description: '', amenities: '' });
+    setShowModal(true);
+  };
 
   return (
-    <div className="p-8">
-      <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold">My Hotels</h1>
-        <button
-          onClick={() => setShowForm(true)}
-          className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700"
-        >
-          Add Hotel
-        </button>
-      </div>
-
-      {showForm && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white p-8 rounded-lg max-w-md w-full">
-            <h2 className="text-xl font-bold mb-4">
-              {editingHotel ? 'Edit Hotel' : 'Add Hotel'}
-            </h2>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Hotel Name *</label>
-                <input
-                  type="text"
-                  placeholder="Enter hotel name"
-                  value={formData.name}
-                  onChange={(e) => setFormData({...formData, name: e.target.value})}
-                  className="w-full p-3 border rounded-lg"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Location *</label>
-                <input
-                  type="text"
-                  placeholder="Enter hotel location"
-                  value={formData.location}
-                  onChange={(e) => setFormData({...formData, location: e.target.value})}
-                  className="w-full p-3 border rounded-lg"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Description *</label>
-                <textarea
-                  placeholder="Enter hotel description"
-                  value={formData.description}
-                  onChange={(e) => setFormData({...formData, description: e.target.value})}
-                  className="w-full p-3 border rounded-lg h-24"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Amenities</label>
-                <input
-                  type="text"
-                  placeholder="WiFi, Pool, Gym, Spa (comma separated)"
-                  value={formData.amenities}
-                  onChange={(e) => setFormData({...formData, amenities: e.target.value})}
-                  className="w-full p-3 border rounded-lg"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Hotel Images</label>
-                <input
-                  type="text"
-                  placeholder="https://example.com/image1.jpg, https://example.com/image2.jpg"
-                  value={formData.images}
-                  onChange={(e) => setFormData({...formData, images: e.target.value})}
-                  className="w-full p-3 border rounded-lg"
-                />
-              </div>
-              <div className="flex gap-4">
-                <button
-                  type="submit"
-                  className="flex-1 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700"
-                >
-                  {editingHotel ? 'Update' : 'Create'}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowForm(false);
-                    setEditingHotel(null);
-                    setFormData({ name: '', location: '', description: '', amenities: '', images: '' });
-                  }}
-                  className="flex-1 bg-gray-500 text-white py-2 rounded-lg hover:bg-gray-600"
-                >
-                  Cancel
-                </button>
-              </div>
-            </form>
-          </div>
+    <div className="min-h-screen bg-gray-50 pt-20">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="flex justify-between items-center mb-8">
+          <h1 className="text-3xl font-bold text-gray-900">Manage Hotels</h1>
+          <button
+            onClick={openAddModal}
+            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            Add New Hotel
+          </button>
         </div>
-      )}
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {hotels.map((hotel) => (
-          <div key={hotel._id} className="bg-white rounded-lg shadow-lg overflow-hidden">
-            <div className="h-48 bg-gradient-to-r from-blue-400 to-purple-500 flex items-center justify-center">
-              {hotel.images && hotel.images.length > 0 ? (
-                <img src={hotel.images[0]} alt={hotel.name} className="w-full h-full object-cover" />
-              ) : (
-                <svg className="w-16 h-16 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                </svg>
-              )}
-            </div>
-            <div className="p-6">
-              <h3 className="text-xl font-bold mb-2">{hotel.name}</h3>
-              <p className="text-gray-600 mb-2">📍 {hotel.location}</p>
-              <p className="text-gray-700 mb-4">{hotel.description}</p>
-              <div className="mb-4">
-                <p className="text-sm text-gray-600">Amenities:</p>
-                <div className="flex flex-wrap gap-1">
-                  {hotel.amenities.map((amenity, index) => (
-                    <span key={index} className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs">
-                      {amenity}
-                    </span>
-                  ))}
-                </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {hotels.map(hotel => (
+            <div key={hotel._id} className="bg-white rounded-lg shadow-md overflow-hidden">
+              <div className="h-48 bg-gradient-to-r from-blue-400 to-purple-500 flex items-center justify-center">
+                <span className="text-white text-lg font-semibold">Hotel Image</span>
               </div>
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-600">Rooms: {hotel.totalRooms}</span>
+              <div className="p-6">
+                <h3 className="text-xl font-semibold mb-2">{hotel.name}</h3>
+                <p className="text-gray-600 mb-2">📍 {hotel.location}</p>
+                <p className="text-gray-700 text-sm mb-3 line-clamp-2">{hotel.description}</p>
+                
+                <div className="mb-4">
+                  <div className="flex items-center mb-2">
+                    <span className="text-yellow-500">⭐</span>
+                    <span className="ml-1 text-sm">{hotel.rating}</span>
+                  </div>
+                  
+                  {hotel.amenities.length > 0 && (
+                    <div className="flex flex-wrap gap-1">
+                      {hotel.amenities.slice(0, 3).map((amenity, index) => (
+                        <span key={index} className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs">
+                          {amenity}
+                        </span>
+                      ))}
+                      {hotel.amenities.length > 3 && (
+                        <span className="bg-gray-100 text-gray-600 px-2 py-1 rounded text-xs">
+                          +{hotel.amenities.length - 3} more
+                        </span>
+                      )}
+                    </div>
+                  )}
+                </div>
+                
                 <div className="flex gap-2">
                   <button
                     onClick={() => handleEdit(hotel)}
-                    className="bg-yellow-500 text-white px-3 py-1 rounded text-sm hover:bg-yellow-600"
+                    className="flex-1 bg-green-600 text-white py-2 px-4 rounded hover:bg-green-700 transition-colors"
                   >
                     Edit
                   </button>
                   <button
                     onClick={() => handleDelete(hotel._id)}
-                    className="bg-red-500 text-white px-3 py-1 rounded text-sm hover:bg-red-600"
+                    className="flex-1 bg-red-600 text-white py-2 px-4 rounded hover:bg-red-700 transition-colors"
                   >
                     Delete
                   </button>
                 </div>
               </div>
             </div>
-          </div>
-        ))}
-      </div>
-
-      {hotels.length === 0 && (
-        <div className="text-center py-12">
-          <p className="text-gray-500 text-lg">No hotels found. Add your first hotel!</p>
+          ))}
         </div>
-      )}
+
+        {hotels.length === 0 && (
+          <div className="text-center py-12">
+            <p className="text-gray-500 text-lg">No hotels found. Add your first hotel!</p>
+          </div>
+        )}
+
+        {/* Modal */}
+        {showModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white p-8 rounded-lg max-w-md w-full mx-4">
+              <h2 className="text-xl font-bold mb-4">
+                {editingHotel ? 'Edit Hotel' : 'Add New Hotel'}
+              </h2>
+              
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium mb-1">Hotel Name</label>
+                  <input
+                    type="text"
+                    value={formData.name}
+                    onChange={(e) => setFormData({...formData, name: e.target.value})}
+                    className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500"
+                    required
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium mb-1">Location</label>
+                  <input
+                    type="text"
+                    value={formData.location}
+                    onChange={(e) => setFormData({...formData, location: e.target.value})}
+                    className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500"
+                    required
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium mb-1">Description</label>
+                  <textarea
+                    value={formData.description}
+                    onChange={(e) => setFormData({...formData, description: e.target.value})}
+                    className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500"
+                    rows={3}
+                    required
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium mb-1">Amenities (comma separated)</label>
+                  <input
+                    type="text"
+                    value={formData.amenities}
+                    onChange={(e) => setFormData({...formData, amenities: e.target.value})}
+                    className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500"
+                    placeholder="WiFi, Pool, Gym, Restaurant"
+                  />
+                </div>
+                
+                <div className="flex gap-4 pt-4">
+                  <button
+                    type="submit"
+                    className="flex-1 bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition-colors"
+                  >
+                    {editingHotel ? 'Update Hotel' : 'Add Hotel'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowModal(false)}
+                    className="flex-1 bg-gray-500 text-white py-2 rounded hover:bg-gray-600 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 };
