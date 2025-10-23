@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { apiCall } from '../utils/api';
 import SearchFilters from '../components/SearchFilters';
 import HotelCard from '../components/HotelCard';
+import { mockHotels } from '../utils/mockData';
 
 interface Hotel {
   _id: string;
@@ -20,19 +20,45 @@ const HotelSearch: React.FC = () => {
   const fetchHotels = async (filters: any = {}) => {
     setLoading(true);
     setError('');
+    
+    // Simulate API delay
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
     try {
-      const params = new URLSearchParams();
-      Object.keys(filters).forEach(key => {
-        if (filters[key]) params.append(key, filters[key]);
-      });
+      let filteredHotels = [...mockHotels];
       
-      const response = await apiCall(`/hotels?${params.toString()}`);
-      if (response.ok) {
-        const data = await response.json();
-        setHotels(data);
-      } else {
-        setError('Failed to fetch hotels');
+      // Apply filters
+      if (filters.search) {
+        filteredHotels = filteredHotels.filter(hotel => 
+          hotel.name.toLowerCase().includes(filters.search.toLowerCase())
+        );
       }
+      
+      if (filters.location) {
+        filteredHotels = filteredHotels.filter(hotel => 
+          hotel.location.toLowerCase().includes(filters.location.toLowerCase())
+        );
+      }
+      
+      if (filters.minPrice || filters.maxPrice) {
+        filteredHotels = filteredHotels.filter(hotel => {
+          const minRoomPrice = Math.min(...hotel.rooms.map(room => room.price));
+          const maxRoomPrice = Math.max(...hotel.rooms.map(room => room.price));
+          
+          if (filters.minPrice && minRoomPrice < parseInt(filters.minPrice)) return false;
+          if (filters.maxPrice && maxRoomPrice > parseInt(filters.maxPrice)) return false;
+          
+          return true;
+        });
+      }
+      
+      if (filters.roomType) {
+        filteredHotels = filteredHotels.filter(hotel => 
+          hotel.rooms.some(room => room.type === filters.roomType)
+        );
+      }
+      
+      setHotels(filteredHotels);
     } catch (err) {
       setError('Error fetching hotels');
     } finally {

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { apiCall } from '../utils/api';
 import { useAuth } from '../context/AuthContext';
+import { mockBookings } from '../utils/mockData';
 
 interface Booking {
   _id: string;
@@ -35,14 +35,12 @@ const Bookings: React.FC = () => {
   }, [user]);
 
   const fetchBookings = async () => {
+    // Simulate API delay
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
     try {
-      const response = await apiCall('/bookings/my-bookings');
-      if (response.ok) {
-        const data = await response.json();
-        setBookings(data);
-      } else {
-        setError('Failed to fetch bookings');
-      }
+      // Return mock bookings
+      setBookings(mockBookings);
     } catch (err) {
       setError('Error fetching bookings');
     } finally {
@@ -54,17 +52,17 @@ const Bookings: React.FC = () => {
     if (!window.confirm('Are you sure you want to cancel this booking?')) return;
     
     try {
-      const response = await apiCall(`/bookings/${bookingId}/cancel`, {
-        method: 'PUT'
-      });
+      // Simulate cancellation
+      await new Promise(resolve => setTimeout(resolve, 500));
       
-      if (response.ok) {
-        alert('Booking cancelled successfully');
-        fetchBookings();
-      } else {
-        const error = await response.json();
-        alert(error.message || 'Failed to cancel booking');
-      }
+      // Update booking status to cancelled
+      setBookings(prev => prev.map(booking => 
+        booking._id === bookingId 
+          ? { ...booking, status: 'cancelled' }
+          : booking
+      ));
+      
+      alert('Booking cancelled successfully');
     } catch (err) {
       alert('Error cancelling booking');
     }

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { apiCall } from '../utils/api';
 import { useAuth } from '../context/AuthContext';
+import { mockHotels } from '../utils/mockData';
 
 interface Room {
   _id: string;
@@ -42,11 +42,13 @@ const HotelDetails: React.FC = () => {
   }, [id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchHotel = async () => {
+    // Simulate API delay
+    await new Promise(resolve => setTimeout(resolve, 300));
+    
     try {
-      const response = await apiCall(`/hotels/${id}`);
-      if (response.ok) {
-        const data = await response.json();
-        setHotel(data);
+      const foundHotel = mockHotels.find(hotel => hotel._id === id);
+      if (foundHotel) {
+        setHotel(foundHotel);
       } else {
         setError('Hotel not found');
       }
@@ -68,25 +70,13 @@ const HotelDetails: React.FC = () => {
       return;
     }
 
+    // Simulate booking process
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
     try {
-      const response = await apiCall('/bookings', {
-        method: 'POST',
-        body: JSON.stringify({
-          roomId,
-          checkIn: bookingData.checkIn,
-          checkOut: bookingData.checkOut,
-          guests: bookingData.guests,
-          specialRequests: bookingData.specialRequests
-        })
-      });
-
-      if (response.ok) {
-        alert('Booking confirmed successfully!');
-        navigate('/dashboard');
-      } else {
-        const error = await response.json();
-        alert(error.message || 'Booking failed');
-      }
+      // Mock booking success
+      alert('Booking confirmed successfully!');
+      navigate('/bookings');
     } catch (err) {
       alert('Error creating booking');
     }
