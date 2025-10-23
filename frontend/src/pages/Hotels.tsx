@@ -8,6 +8,7 @@ interface Hotel {
   description: string;
   amenities: string[];
   rating: number;
+  imageUrl?: string;
 }
 
 const Hotels: React.FC = () => {
@@ -18,7 +19,8 @@ const Hotels: React.FC = () => {
     name: '',
     location: '',
     description: '',
-    amenities: ''
+    amenities: '',
+    imageUrl: ''
   });
 
   useEffect(() => {
@@ -53,7 +55,7 @@ const Hotels: React.FC = () => {
 
     setShowModal(false);
     setEditingHotel(null);
-    setFormData({ name: '', location: '', description: '', amenities: '' });
+    setFormData({ name: '', location: '', description: '', amenities: '', imageUrl: '' });
   };
 
   const handleEdit = (hotel: Hotel) => {
@@ -62,7 +64,8 @@ const Hotels: React.FC = () => {
       name: hotel.name,
       location: hotel.location,
       description: hotel.description,
-      amenities: hotel.amenities.join(', ')
+      amenities: hotel.amenities.join(', '),
+      imageUrl: hotel.imageUrl || ''
     });
     setShowModal(true);
   };
@@ -75,7 +78,7 @@ const Hotels: React.FC = () => {
 
   const openAddModal = () => {
     setEditingHotel(null);
-    setFormData({ name: '', location: '', description: '', amenities: '' });
+    setFormData({ name: '', location: '', description: '', amenities: '', imageUrl: '' });
     setShowModal(true);
   };
 
@@ -95,8 +98,19 @@ const Hotels: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {hotels.map(hotel => (
             <div key={hotel._id} className="bg-white rounded-lg shadow-md overflow-hidden">
-              <div className="h-48 bg-gradient-to-r from-blue-400 to-purple-500 flex items-center justify-center">
-                <span className="text-white text-lg font-semibold">Hotel Image</span>
+              <div className="h-48 bg-gradient-to-r from-blue-400 to-purple-500 flex items-center justify-center overflow-hidden">
+                {hotel.imageUrl ? (
+                  <img 
+                    src={hotel.imageUrl} 
+                    alt={hotel.name}
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      e.currentTarget.style.display = 'none';
+                      e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                    }}
+                  />
+                ) : null}
+                <span className={`text-white text-lg font-semibold ${hotel.imageUrl ? 'hidden' : ''}`}>Hotel Image</span>
               </div>
               <div className="p-6">
                 <h3 className="text-xl font-semibold mb-2">{hotel.name}</h3>
@@ -201,6 +215,29 @@ const Hotels: React.FC = () => {
                     className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500"
                     placeholder="WiFi, Pool, Gym, Restaurant"
                   />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium mb-1">Hotel Image URL</label>
+                  <input
+                    type="url"
+                    value={formData.imageUrl}
+                    onChange={(e) => setFormData({...formData, imageUrl: e.target.value})}
+                    className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500"
+                    placeholder="https://example.com/hotel-image.jpg"
+                  />
+                  {formData.imageUrl && (
+                    <div className="mt-2">
+                      <img 
+                        src={formData.imageUrl} 
+                        alt="Preview" 
+                        className="w-full h-32 object-cover rounded"
+                        onError={(e) => {
+                          e.currentTarget.style.display = 'none';
+                        }}
+                      />
+                    </div>
+                  )}
                 </div>
                 
                 <div className="flex gap-4 pt-4">

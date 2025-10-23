@@ -11,6 +11,7 @@ interface Room {
   capacity: number;
   amenities: string[];
   isAvailable: boolean;
+  imageUrl?: string;
 }
 
 const Rooms: React.FC = () => {
@@ -24,7 +25,8 @@ const Rooms: React.FC = () => {
     type: 'single',
     price: '',
     capacity: '1',
-    amenities: ''
+    amenities: '',
+    imageUrl: ''
   });
 
   useEffect(() => {
@@ -70,7 +72,7 @@ const Rooms: React.FC = () => {
 
     setShowModal(false);
     setEditingRoom(null);
-    setFormData({ hotelId: '', roomNumber: '', type: 'single', price: '', capacity: '1', amenities: '' });
+    setFormData({ hotelId: '', roomNumber: '', type: 'single', price: '', capacity: '1', amenities: '', imageUrl: '' });
   };
 
   const handleEdit = (room: Room) => {
@@ -81,7 +83,8 @@ const Rooms: React.FC = () => {
       type: room.type,
       price: room.price.toString(),
       capacity: room.capacity.toString(),
-      amenities: room.amenities.join(', ')
+      amenities: room.amenities.join(', '),
+      imageUrl: room.imageUrl || ''
     });
     setShowModal(true);
   };
@@ -102,7 +105,7 @@ const Rooms: React.FC = () => {
 
   const openAddModal = () => {
     setEditingRoom(null);
-    setFormData({ hotelId: '', roomNumber: '', type: 'single', price: '', capacity: '1', amenities: '' });
+    setFormData({ hotelId: '', roomNumber: '', type: 'single', price: '', capacity: '1', amenities: '', imageUrl: '' });
     setShowModal(true);
   };
 
@@ -122,8 +125,19 @@ const Rooms: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {rooms.map(room => (
             <div key={room._id} className="bg-white rounded-lg shadow-md overflow-hidden">
-              <div className="h-32 bg-gradient-to-r from-green-400 to-blue-500 flex items-center justify-center">
-                <span className="text-white text-lg font-semibold">Room {room.roomNumber}</span>
+              <div className="h-32 bg-gradient-to-r from-green-400 to-blue-500 flex items-center justify-center overflow-hidden">
+                {room.imageUrl ? (
+                  <img 
+                    src={room.imageUrl} 
+                    alt={`Room ${room.roomNumber}`}
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      e.currentTarget.style.display = 'none';
+                      e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                    }}
+                  />
+                ) : null}
+                <span className={`text-white text-lg font-semibold ${room.imageUrl ? 'hidden' : ''}`}>Room {room.roomNumber}</span>
               </div>
               <div className="p-6">
                 <div className="flex justify-between items-start mb-2">
@@ -278,6 +292,29 @@ const Rooms: React.FC = () => {
                     className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500"
                     placeholder="WiFi, TV, AC, Mini Bar"
                   />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium mb-1">Room Image URL</label>
+                  <input
+                    type="url"
+                    value={formData.imageUrl}
+                    onChange={(e) => setFormData({...formData, imageUrl: e.target.value})}
+                    className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500"
+                    placeholder="https://example.com/room-image.jpg"
+                  />
+                  {formData.imageUrl && (
+                    <div className="mt-2">
+                      <img 
+                        src={formData.imageUrl} 
+                        alt="Preview" 
+                        className="w-full h-24 object-cover rounded"
+                        onError={(e) => {
+                          e.currentTarget.style.display = 'none';
+                        }}
+                      />
+                    </div>
+                  )}
                 </div>
                 
                 <div className="flex gap-4 pt-4">
