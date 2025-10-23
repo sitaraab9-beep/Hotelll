@@ -39,7 +39,7 @@ const HotelDetails: React.FC = () => {
 
   useEffect(() => {
     fetchHotel();
-  }, [id]);
+  }, [id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchHotel = async () => {
     try {
