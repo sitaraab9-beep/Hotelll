@@ -24,10 +24,5 @@
       "src": "/(.*)",
       "dest": "/frontend/build/index.html"
     }
-  ],
-  "functions": {
-    "backend/server.js": {
-      "maxDuration": 30
-    }
-  }
+  ]
 }
