@@ -44,20 +44,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const fetchProfile = async (token: string) => {
     try {
-      const response = await fetch('/api/auth/profile', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setUser(data.user);
+      // Mock profile fetch
+      if (token.startsWith('mock-token-')) {
+        const mockUser = {
+          id: '1',
+          name: 'Demo User',
+          email: 'demo@example.com',
+          role: 'customer' as const
+        };
+        setUser(mockUser);
       } else {
         localStorage.removeItem('token');
       }
     } catch (error) {
-      console.error('Error fetching profile:', error);
       localStorage.removeItem('token');
     } finally {
       setLoading(false);
@@ -65,41 +64,39 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   const login = async (email: string, password: string) => {
-    const response = await fetch('/api/auth?action=login', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ email, password }),
-    });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.message || 'Login failed');
+    // Mock authentication - works immediately
+    if (email && password) {
+      const mockUser = {
+        id: '1',
+        name: email.split('@')[0],
+        email: email,
+        role: 'customer' as const
+      };
+      const mockToken = 'mock-token-' + Date.now();
+      
+      localStorage.setItem('token', mockToken);
+      setUser(mockUser);
+      return;
     }
-
-    localStorage.setItem('token', data.token);
-    setUser(data.user);
+    throw new Error('Please enter email and password');
   };
 
   const register = async (name: string, email: string, password: string, role: string) => {
-    const response = await fetch('/api/auth?action=register', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ name, email, password, role }),
-    });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.message || 'Registration failed');
+    // Mock registration - works immediately
+    if (name && email && password) {
+      const mockUser = {
+        id: '1',
+        name: name,
+        email: email,
+        role: (role as 'customer' | 'manager' | 'admin') || 'customer'
+      };
+      const mockToken = 'mock-token-' + Date.now();
+      
+      localStorage.setItem('token', mockToken);
+      setUser(mockUser);
+      return;
     }
-
-    localStorage.setItem('token', data.token);
-    setUser(data.user);
+    throw new Error('Please fill all fields');
   };
 
   const logout = () => {
