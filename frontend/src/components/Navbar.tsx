@@ -33,7 +33,7 @@ const Navbar: React.FC = () => {
             <Link to="/" className="flex items-center space-x-3">
               <div className="w-12 h-12 bg-white rounded-full p-1 shadow-lg">
                 <img 
-                  src="/logo.png.png" 
+                  src="/logo.png" 
                   alt="HotelEase Logo" 
                   className="w-full h-full object-contain rounded-full"
                 />
