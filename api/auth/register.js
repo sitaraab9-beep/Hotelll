@@ -30,14 +30,20 @@ const connectDB = async () => {
 };
 
 module.exports = async (req, res) => {
+  res.setHeader('Content-Type', 'application/json');
+  
   if (req.method !== 'POST') {
     return res.status(405).json({ message: 'Method not allowed' });
   }
 
-  await connectDB();
-
   try {
+    await connectDB();
+    
     const { name, email, password, role } = req.body;
+
+    if (!name || !email || !password) {
+      return res.status(400).json({ message: 'All fields are required' });
+    }
 
     const existingUser = await User.findOne({ email });
     if (existingUser) {
@@ -55,9 +61,9 @@ module.exports = async (req, res) => {
     
     await user.save();
     
-    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '7d' });
+    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET || 'fallback-secret', { expiresIn: '7d' });
 
-    res.status(201).json({
+    return res.status(201).json({
       success: true,
       token,
       user: {
@@ -68,6 +74,7 @@ module.exports = async (req, res) => {
       }
     });
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    console.error('Register error:', error);
+    return res.status(500).json({ message: error.message || 'Registration failed' });
   }
 };
