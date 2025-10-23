@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { mockHotels, mockBookings } from '../utils/mockData';
 
 interface Hotel {
   _id: string;
@@ -47,40 +48,18 @@ const Dashboard: React.FC = () => {
   });
 
   const fetchStats = React.useCallback(async () => {
+    // Simulate API delay
+    await new Promise(resolve => setTimeout(resolve, 300));
+    
     try {
-      const token = localStorage.getItem('token');
+      const allRooms = mockHotels.flatMap(hotel => hotel.rooms);
       
-      if (user?.role === 'manager') {
-        const hotelsRes = await fetch('/api/hotels/manager/my-hotels', {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-        const hotelsData = await hotelsRes.json();
-        
-        const roomsRes = await fetch('/api/rooms', {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-        const roomsData = await roomsRes.json();
-        
-        setStats({
-          hotels: hotelsData.success ? hotelsData.hotels.length : 0,
-          rooms: roomsData.success ? roomsData.rooms.length : 0,
-          users: 0,
-          bookings: 0
-        });
-      } else if (user?.role === 'admin') {
-        const hotelsRes = await fetch('/api/hotels');
-        const hotelsData = await hotelsRes.json();
-        
-        const roomsRes = await fetch('/api/rooms');
-        const roomsData = await roomsRes.json();
-        
-        setStats({
-          hotels: hotelsData.success ? hotelsData.hotels.length : 0,
-          rooms: roomsData.success ? roomsData.rooms.length : 0,
-          users: 0,
-          bookings: 0
-        });
-      }
+      setStats({
+        hotels: mockHotels.length,
+        rooms: allRooms.length,
+        users: 25, // Mock user count
+        bookings: mockBookings.length
+      });
     } catch (error) {
       console.error('Error fetching stats:', error);
     }
@@ -90,30 +69,34 @@ const Dashboard: React.FC = () => {
     if (user?.role !== 'customer' && user?.role !== 'admin') return;
     
     setLoading(true);
+    
+    // Simulate API delay
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
     try {
-      const hotelsRes = await fetch('/api/hotels');
-      const hotelsData = await hotelsRes.json();
+      // Set mock hotels with proper interface
+      const mappedHotels = mockHotels.map(hotel => ({
+        ...hotel,
+        images: [],
+        totalRooms: hotel.rooms.length
+      }));
+      setHotels(mappedHotels);
       
-      const roomsRes = await fetch('/api/rooms');
-      const roomsData = await roomsRes.json();
+      // Flatten all rooms from hotels
+      const allRooms = mockHotels.flatMap(hotel => 
+        hotel.rooms.map(room => ({
+          ...room,
+          hotelId: hotel._id,
+          availability: room.isAvailable,
+          images: [],
+          description: `${room.type} room in ${hotel.name}`
+        }))
+      );
+      setRooms(allRooms);
       
-      if (hotelsData.success) {
-        setHotels(hotelsData.hotels);
-      }
-      if (roomsData.success) {
-        setRooms(roomsData.rooms);
-      }
-      
-      // Fetch favorites for customers
+      // Mock favorites
       if (user?.role === 'customer') {
-        const token = localStorage.getItem('token');
-        const favRes = await fetch('/api/favorites', {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-        const favData = await favRes.json();
-        if (favData.success) {
-          setFavorites(favData.favorites.map((fav: any) => fav.hotelId._id));
-        }
+        setFavorites(['1']); // Mock favorite hotel
       }
     } catch (error) {
       console.error('Error fetching hotels and rooms:', error);
@@ -430,7 +413,7 @@ const Dashboard: React.FC = () => {
                     </svg>
                   </div>
                 </div>
-                <p className="text-3xl font-bold text-gray-900">0</p>
+                <p className="text-3xl font-bold text-gray-900">{mockBookings.length}</p>
                 <p className="text-sm text-gray-500 mt-2">Active reservations</p>
               </div>
             </div>
