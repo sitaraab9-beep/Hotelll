@@ -11,11 +11,26 @@ const seedData = async () => {
       return;
     }
 
+    const bcrypt = require('bcryptjs');
+    
+    // Create test customer user
+    let customer = await User.findOne({ email: 'savi@gmail.com' });
+    if (!customer) {
+      const hashedPassword = await bcrypt.hash('Savita@123', 10);
+      customer = new User({
+        name: 'Savita Customer',
+        email: 'savi@gmail.com',
+        password: hashedPassword,
+        role: 'customer'
+      });
+      await customer.save();
+      console.log('✅ Test customer created: savi@gmail.com / Savita@123');
+    }
+
     // Find a manager user
     let manager = await User.findOne({ role: 'manager' });
     if (!manager) {
       // Create a sample manager
-      const bcrypt = require('bcryptjs');
       const hashedPassword = await bcrypt.hash('manager123', 10);
       manager = new User({
         name: 'Hotel Manager',

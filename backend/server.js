@@ -9,6 +9,7 @@ const roomRoutes = require('./routes/rooms');
 const bookingRoutes = require('./routes/bookings');
 const favoriteRoutes = require('./routes/favorites');
 const adminRoutes = require('./routes/admin');
+const testRoutes = require('./routes/test');
 
 const app = express();
 
@@ -28,6 +29,7 @@ app.use('/api/rooms', roomRoutes);
 app.use('/api/bookings', bookingRoutes);
 app.use('/api/favorites', favoriteRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/test', testRoutes);
 
 // Database connection
 mongoose.connect(process.env.MONGODB_URI)
