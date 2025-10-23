@@ -15,7 +15,7 @@ interface Room {
 
 const Rooms: React.FC = () => {
   const [rooms, setRooms] = useState<Room[]>([]);
-  const [hotels, setHotels] = useState(mockHotels);
+  const [hotels] = useState(mockHotels);
   const [showModal, setShowModal] = useState(false);
   const [editingRoom, setEditingRoom] = useState<Room | null>(null);
   const [formData, setFormData] = useState({
