@@ -46,18 +46,27 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       // Mock profile fetch
       if (token.startsWith('mock-token-')) {
-        const mockUser = {
-          id: '1',
-          name: 'Demo User',
-          email: 'demo@example.com',
-          role: 'customer' as const
-        };
-        setUser(mockUser);
+        const savedUserData = localStorage.getItem('userData');
+        if (savedUserData) {
+          const userData = JSON.parse(savedUserData);
+          setUser(userData);
+        } else {
+          // Fallback user if no saved data
+          const mockUser = {
+            id: '1',
+            name: 'Demo User',
+            email: 'demo@example.com',
+            role: 'customer' as const
+          };
+          setUser(mockUser);
+        }
       } else {
         localStorage.removeItem('token');
+        localStorage.removeItem('userData');
       }
     } catch (error) {
       localStorage.removeItem('token');
+      localStorage.removeItem('userData');
     } finally {
       setLoading(false);
     }
@@ -66,15 +75,37 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const login = async (email: string, password: string) => {
     // Mock authentication - works immediately
     if (email && password) {
-      const mockUser = {
-        id: '1',
-        name: email.split('@')[0],
-        email: email,
-        role: 'customer' as const
-      };
+      // Try to find existing user data
+      const existingUserData = localStorage.getItem('userData');
+      let mockUser;
+      
+      if (existingUserData) {
+        const userData = JSON.parse(existingUserData);
+        if (userData.email === email) {
+          mockUser = userData;
+        } else {
+          // Different email, create new user
+          mockUser = {
+            id: Date.now().toString(),
+            name: email.split('@')[0],
+            email: email,
+            role: 'customer' as const
+          };
+        }
+      } else {
+        // No existing user, create new
+        mockUser = {
+          id: Date.now().toString(),
+          name: email.split('@')[0],
+          email: email,
+          role: 'customer' as const
+        };
+      }
+      
       const mockToken = 'mock-token-' + Date.now();
       
       localStorage.setItem('token', mockToken);
+      localStorage.setItem('userData', JSON.stringify(mockUser));
       setUser(mockUser);
       return;
     }
@@ -85,14 +116,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     // Mock registration - works immediately
     if (name && email && password) {
       const mockUser = {
-        id: '1',
+        id: Date.now().toString(),
         name: name,
         email: email,
         role: (role as 'customer' | 'manager' | 'admin') || 'customer'
       };
       const mockToken = 'mock-token-' + Date.now();
       
+      // Save user data to localStorage
       localStorage.setItem('token', mockToken);
+      localStorage.setItem('userData', JSON.stringify(mockUser));
       setUser(mockUser);
       return;
     }
@@ -101,6 +134,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const logout = () => {
     localStorage.removeItem('token');
+    localStorage.removeItem('userData');
     setUser(null);
   };
 
