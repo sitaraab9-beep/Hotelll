@@ -1,115 +1,65 @@
 const Hotel = require('../models/Hotel');
 const Room = require('../models/Room');
 
-// Get all hotels
-const getHotels = async (req, res) => {
+// Get all hotels with search and filters
+exports.getHotels = async (req, res) => {
   try {
-    const hotels = await Hotel.find().populate('managerId', 'name email');
-    res.json({ success: true, hotels });
+    const { location, minPrice, maxPrice, search } = req.query;
+    let query = {};
+    
+    if (location) query.location = { $regex: location, $options: 'i' };
+    if (search) query.name = { $regex: search, $options: 'i' };
+    
+    const hotels = await Hotel.find(query).populate('managerId', 'name email');
+    
+    // Filter by price if specified
+    let filteredHotels = hotels;
+    if (minPrice || maxPrice) {
+      const hotelIds = hotels.map(h => h._id);
+      const rooms = await Room.find({ hotelId: { $in: hotelIds } });
+      
+      const priceFilteredHotelIds = rooms
+        .filter(room => {
+          if (minPrice && room.price < minPrice) return false;
+          if (maxPrice && room.price > maxPrice) return false;
+          return true;
+        })
+        .map(room => room.hotelId.toString());
+      
+      filteredHotels = hotels.filter(hotel => 
+        priceFilteredHotelIds.includes(hotel._id.toString())
+      );
+    }
+    
+    res.json(filteredHotels);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
 
-// Get hotels by manager
-const getManagerHotels = async (req, res) => {
-  try {
-    const hotels = await Hotel.find({ managerId: req.user._id });
-    res.json({ success: true, hotels });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-};
-
-// Get single hotel
-const getHotel = async (req, res) => {
+// Get hotel by ID with rooms
+exports.getHotelById = async (req, res) => {
   try {
     const hotel = await Hotel.findById(req.params.id).populate('managerId', 'name email');
-    if (!hotel) {
-      return res.status(404).json({ message: 'Hotel not found' });
-    }
-    res.json({ success: true, hotel });
+    if (!hotel) return res.status(404).json({ message: 'Hotel not found' });
+    
+    const rooms = await Room.find({ hotelId: hotel._id });
+    res.json({ ...hotel.toObject(), rooms });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
 
-// Create hotel
-const createHotel = async (req, res) => {
+// Create hotel (Manager only)
+exports.createHotel = async (req, res) => {
   try {
-    const { name, location, description, amenities, images } = req.body;
-    
-    const hotel = await Hotel.create({
-      name,
-      location,
-      description,
-      amenities: amenities || [],
-      images: images || [],
-      managerId: req.user._id
+    const hotel = new Hotel({
+      ...req.body,
+      managerId: req.user.id
     });
-
-    res.status(201).json({ success: true, hotel });
+    await hotel.save();
+    res.status(201).json(hotel);
   } catch (error) {
     res.status(400).json({ message: error.message });
   }
-};
-
-// Update hotel
-const updateHotel = async (req, res) => {
-  try {
-    const hotel = await Hotel.findById(req.params.id);
-    
-    if (!hotel) {
-      return res.status(404).json({ message: 'Hotel not found' });
-    }
-
-    // Check if user owns this hotel or is admin
-    if (hotel.managerId.toString() !== req.user._id.toString() && req.user.role !== 'admin') {
-      return res.status(403).json({ message: 'Not authorized' });
-    }
-
-    const updatedHotel = await Hotel.findByIdAndUpdate(
-      req.params.id,
-      req.body,
-      { new: true, runValidators: true }
-    );
-
-    res.json({ success: true, hotel: updatedHotel });
-  } catch (error) {
-    res.status(400).json({ message: error.message });
-  }
-};
-
-// Delete hotel
-const deleteHotel = async (req, res) => {
-  try {
-    const hotel = await Hotel.findById(req.params.id);
-    
-    if (!hotel) {
-      return res.status(404).json({ message: 'Hotel not found' });
-    }
-
-    // Check if user owns this hotel or is admin
-    if (hotel.managerId.toString() !== req.user._id.toString() && req.user.role !== 'admin') {
-      return res.status(403).json({ message: 'Not authorized' });
-    }
-
-    // Delete all rooms associated with this hotel
-    await Room.deleteMany({ hotelId: req.params.id });
-    
-    await Hotel.findByIdAndDelete(req.params.id);
-
-    res.json({ success: true, message: 'Hotel and associated rooms deleted' });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-};
-
-module.exports = {
-  getHotels,
-  getManagerHotels,
-  getHotel,
-  createHotel,
-  updateHotel,
-  deleteHotel
 };

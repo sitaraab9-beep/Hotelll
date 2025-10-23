@@ -20,6 +20,7 @@ import Users from './pages/Users';
 import AllHotels from './pages/AllHotels';
 import AllRooms from './pages/AllRooms';
 import HotelSearch from './pages/HotelSearch';
+import HotelDetails from './pages/HotelDetails';
 import BookingPage from './pages/BookingPage';
 import ProtectedRoute from './components/ProtectedRoute';
 
@@ -147,6 +148,7 @@ function App() {
                   </ProtectedRoute>
                 } 
               />
+              <Route path="/hotels/:id" element={<HotelDetails />} />
               <Route 
                 path="/book" 
                 element={

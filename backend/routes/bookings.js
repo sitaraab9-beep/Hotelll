@@ -1,14 +1,11 @@
 const express = require('express');
-const { createBooking, getCustomerBookings, getManagerBookings, updateBookingStatus, cancelBooking, checkAvailability } = require('../controllers/bookingController');
-const { auth } = require('../middleware/auth');
-
 const router = express.Router();
+const { createBooking, getUserBookings, cancelBooking, getAllBookings } = require('../controllers/bookingController');
+const auth = require('../middleware/auth');
 
 router.post('/', auth, createBooking);
-router.get('/customer', auth, getCustomerBookings);
-router.get('/manager', auth, getManagerBookings);
-router.put('/:id/status', auth, updateBookingStatus);
+router.get('/my-bookings', auth, getUserBookings);
 router.put('/:id/cancel', auth, cancelBooking);
-router.get('/check-availability', checkAvailability);
+router.get('/all', auth, getAllBookings);
 
 module.exports = router;

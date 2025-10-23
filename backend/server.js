@@ -36,6 +36,9 @@ mongoose.connect(process.env.MONGODB_URI)
     // Seed admin user
     const seedAdmin = require('./utils/seedAdmin');
     await seedAdmin();
+    // Seed sample data
+    const seedData = require('./utils/seedData');
+    await seedData();
     // Update room counts
     const { updateAllRoomCounts } = require('./utils/updateRoomCounts');
     await updateAllRoomCounts();
