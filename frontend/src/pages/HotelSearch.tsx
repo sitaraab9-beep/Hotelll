@@ -42,8 +42,8 @@ const HotelSearch: React.FC = () => {
       
       if (filters.minPrice || filters.maxPrice) {
         filteredHotels = filteredHotels.filter(hotel => {
-          const minRoomPrice = Math.min(...hotel.rooms.map(room => room.price));
-          const maxRoomPrice = Math.max(...hotel.rooms.map(room => room.price));
+          const minRoomPrice = Math.min(...hotel.rooms.map((room: any) => room.price));
+          const maxRoomPrice = Math.max(...hotel.rooms.map((room: any) => room.price));
           
           if (filters.minPrice && minRoomPrice < parseInt(filters.minPrice)) return false;
           if (filters.maxPrice && maxRoomPrice > parseInt(filters.maxPrice)) return false;
