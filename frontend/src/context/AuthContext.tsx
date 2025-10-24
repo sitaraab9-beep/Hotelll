@@ -34,10 +34,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Initialize default users if not exists
-    const allUsers = JSON.parse(localStorage.getItem('allUsers') || '[]');
+    // Initialize persistent users that survive deployments
+    let allUsers = JSON.parse(localStorage.getItem('allUsers') || '[]');
     
-    const defaultUsers = [
+    const persistentUsers = [
       {
         id: 'manager1',
         name: 'Hotel Manager',
@@ -49,13 +49,23 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         name: 'System Admin',
         email: 'admin@gmail.com',
         role: 'admin'
+      },
+      {
+        id: 'user1',
+        name: 'Savita User',
+        email: 'user@gmail.com',
+        role: 'customer'
       }
     ];
     
-    defaultUsers.forEach(defaultUser => {
-      const existingUser = allUsers.find((u: any) => u.email === defaultUser.email);
-      if (!existingUser) {
-        allUsers.push(defaultUser);
+    // Always ensure persistent users exist
+    persistentUsers.forEach(persistentUser => {
+      const existingIndex = allUsers.findIndex((u: any) => u.email === persistentUser.email);
+      if (existingIndex === -1) {
+        allUsers.push(persistentUser);
+      } else {
+        // Update existing user to ensure role is correct
+        allUsers[existingIndex] = persistentUser;
       }
     });
     
@@ -128,12 +138,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       
       console.log('Registering user with role:', role, 'Final user:', mockUser);
       
-      // Save user to all users list
+      // Save user to all users list with persistence
       const allUsers = JSON.parse(localStorage.getItem('allUsers') || '[]');
       // Remove existing user with same email if exists
       const filteredUsers = allUsers.filter((u: any) => u.email !== email);
       filteredUsers.push(mockUser);
       localStorage.setItem('allUsers', JSON.stringify(filteredUsers));
+      
+      // Also save to a backup storage for persistence
+      localStorage.setItem('registeredUsers', JSON.stringify(filteredUsers));
       
       // Save current user data
       localStorage.setItem('token', mockToken);
