@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
 
 interface Hotel {
@@ -26,11 +26,7 @@ const Hotels: React.FC = () => {
     imageUrl: ''
   });
 
-  useEffect(() => {
-    fetchHotels();
-  }, [user]);
-
-  const fetchHotels = async () => {
+  const fetchHotels = useCallback(async () => {
     if (!user) return;
     
     try {
@@ -45,7 +41,11 @@ const Hotels: React.FC = () => {
     } catch (error) {
       console.error('Error fetching hotels:', error);
     }
-  };
+  }, [user]);
+
+  useEffect(() => {
+    fetchHotels();
+  }, [fetchHotels]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
