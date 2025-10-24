@@ -1,13 +1,6 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 
-// Temporary in-memory storage for development
-let tempUsers = [
-  { id: '1', name: 'Hotel Manager', email: 'hman@gmail.com', password: '$2a$12$dummy', role: 'manager' },
-  { id: '2', name: 'System Admin', email: 'admin@gmail.com', password: '$2a$12$dummy', role: 'admin' },
-  { id: '3', name: 'Customer User', email: 'user@gmail.com', password: '$2a$12$dummy', role: 'customer' }
-];
-
 const generateToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: '30d' });
 };
@@ -16,32 +9,30 @@ const register = async (req, res) => {
   try {
     const { name, email, password, role } = req.body;
 
-    // Check if user exists in temp storage
-    const existingUser = tempUsers.find(u => u.email === email);
+    // Check if user exists
+    const existingUser = await User.findOne({ email });
     if (existingUser) {
       return res.status(400).json({ message: 'User already exists' });
     }
 
-    // Create user in temp storage
-    const newUser = {
-      id: Date.now().toString(),
+    // Create user
+    const user = await User.create({
       name,
       email,
-      password: '$2a$12$dummy', // Mock hashed password
+      password,
       role: role || 'customer'
-    };
-    
-    tempUsers.push(newUser);
-    const token = generateToken(newUser.id);
+    });
+
+    const token = generateToken(user._id);
 
     res.status(201).json({
       success: true,
       token,
       user: {
-        id: newUser.id,
-        name: newUser.name,
-        email: newUser.email,
-        role: newUser.role
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role
       }
     });
   } catch (error) {
@@ -53,20 +44,25 @@ const login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    // Check if user exists in temp storage
-    const user = tempUsers.find(u => u.email === email);
+    // Check if user exists
+    const user = await User.findOne({ email });
     if (!user) {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
 
-    // For development, accept any password
-    const token = generateToken(user.id);
+    // Check password
+    const isPasswordValid = await user.comparePassword(password);
+    if (!isPasswordValid) {
+      return res.status(401).json({ message: 'Invalid credentials' });
+    }
+
+    const token = generateToken(user._id);
 
     res.json({
       success: true,
       token,
       user: {
-        id: user.id,
+        id: user._id,
         name: user.name,
         email: user.email,
         role: user.role
@@ -79,15 +75,11 @@ const login = async (req, res) => {
 
 const getProfile = async (req, res) => {
   try {
-    const user = tempUsers.find(u => u.id === req.user.id);
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
-    }
-    
+    const user = await User.findById(req.user.id).select('-password');
     res.json({
       success: true,
       user: {
-        id: user.id,
+        id: user._id,
         name: user.name,
         email: user.email,
         role: user.role

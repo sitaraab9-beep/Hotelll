@@ -34,43 +34,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Initialize persistent users that survive deployments
-    let allUsers = JSON.parse(localStorage.getItem('allUsers') || '[]');
-    
-    const persistentUsers = [
-      {
-        id: 'manager1',
-        name: 'Hotel Manager',
-        email: 'hman@gmail.com',
-        role: 'manager'
-      },
-      {
-        id: 'admin1',
-        name: 'System Admin',
-        email: 'admin@gmail.com',
-        role: 'admin'
-      },
-      {
-        id: 'user1',
-        name: 'Savita User',
-        email: 'user@gmail.com',
-        role: 'customer'
-      }
-    ];
-    
-    // Always ensure persistent users exist
-    persistentUsers.forEach(persistentUser => {
-      const existingIndex = allUsers.findIndex((u: any) => u.email === persistentUser.email);
-      if (existingIndex === -1) {
-        allUsers.push(persistentUser);
-      } else {
-        // Update existing user to ensure role is correct
-        allUsers[existingIndex] = persistentUser;
-      }
-    });
-    
-    localStorage.setItem('allUsers', JSON.stringify(allUsers));
-    
     const token = localStorage.getItem('token');
     if (token) {
       fetchProfile(token);
