@@ -31,8 +31,8 @@ const Rooms: React.FC = () => {
 
   useEffect(() => {
     // Load rooms from mock hotels
-    const allRooms = mockHotels.flatMap(hotel => 
-      hotel.rooms.map(room => ({
+    const allRooms = mockHotels.flatMap((hotel: any) => 
+      hotel.rooms.map((room: any) => ({
         ...room,
         hotelId: hotel._id,
         hotelName: hotel.name
@@ -158,7 +158,7 @@ const Rooms: React.FC = () => {
                   <div className="mb-4">
                     <p className="text-sm font-medium mb-1">Amenities:</p>
                     <div className="flex flex-wrap gap-1">
-                      {room.amenities.slice(0, 3).map((amenity, index) => (
+                      {room.amenities.slice(0, 3).map((amenity: string, index: number) => (
                         <span key={index} className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs">
                           {amenity}
                         </span>
@@ -226,7 +226,7 @@ const Rooms: React.FC = () => {
                     required
                   >
                     <option value="">Select Hotel</option>
-                    {hotels.map(hotel => (
+                    {hotels.map((hotel: any) => (
                       <option key={hotel._id} value={hotel._id}>{hotel.name}</option>
                     ))}
                   </select>
