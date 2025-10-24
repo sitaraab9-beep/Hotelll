@@ -120,28 +120,56 @@ const Dashboard: React.FC = () => {
 
   const handleBooking = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!user) return;
+    
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch('/api/bookings', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          hotelId: selectedHotel,
-          roomId: selectedRoom,
-          ...bookingData
-        })
-      });
+      const { addBooking } = await import('../utils/mockData');
+      const hotel = mockHotels.find(h => h._id === selectedHotel);
+      const room = hotel?.rooms.find(r => r._id === selectedRoom);
       
-      if (response.ok) {
-        setShowBookingModal(false);
-        setBookingData({ checkIn: '', checkOut: '', guests: 1 });
-        alert('Booking request submitted! Waiting for manager approval.');
+      if (!room || !hotel) {
+        alert('Room or hotel not found');
+        return;
       }
+      
+      const checkInDate = new Date(bookingData.checkIn);
+      const checkOutDate = new Date(bookingData.checkOut);
+      const days = Math.ceil((checkOutDate.getTime() - checkInDate.getTime()) / (1000 * 60 * 60 * 24));
+      const totalPrice = room.price * days;
+      
+      const newBooking = {
+        _id: 'b' + Date.now(),
+        customerId: user.id,
+        customerName: user.name,
+        customerEmail: user.email,
+        roomId: {
+          _id: selectedRoom,
+          roomNumber: room.roomNumber,
+          type: room.type,
+          price: room.price
+        },
+        hotelId: {
+          _id: selectedHotel,
+          name: hotel.name,
+          location: hotel.location
+        },
+        checkIn: bookingData.checkIn,
+        checkOut: bookingData.checkOut,
+        totalPrice,
+        status: 'pending',
+        guests: bookingData.guests,
+        specialRequests: '',
+        createdAt: new Date().toISOString()
+      };
+      
+      addBooking(newBooking);
+      setShowBookingModal(false);
+      setBookingData({ checkIn: '', checkOut: '', guests: 1 });
+      alert('🎉 Booking submitted successfully! \n\n⏳ Your booking is now PENDING and waiting for manager approval.');
     } catch (error) {
       console.error('Error creating booking:', error);
+      alert('Error creating booking');
     }
   };
 
