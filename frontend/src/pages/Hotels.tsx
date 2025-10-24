@@ -30,13 +30,16 @@ const Hotels: React.FC = () => {
     if (!user) return;
     
     try {
-      const { mockHotels, getHotelsByManager } = await import('../utils/mockData');
+      const token = localStorage.getItem('token');
+      const response = await fetch('/api/hotels', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
       
-      if (user.role === 'manager') {
-        const managerHotels = getHotelsByManager(user.id);
-        setHotels(managerHotels);
-      } else {
-        setHotels(mockHotels);
+      if (response.ok) {
+        const data = await response.json();
+        setHotels(data.hotels || []);
       }
     } catch (error) {
       console.error('Error fetching hotels:', error);
@@ -61,32 +64,28 @@ const Hotels: React.FC = () => {
     };
 
     try {
-      const { addHotel } = await import('../utils/mockData');
+      const token = localStorage.getItem('token');
+      const method = editingHotel ? 'PUT' : 'POST';
+      const url = editingHotel ? `/api/hotels/${editingHotel._id}` : '/api/hotels';
       
-      if (editingHotel) {
-        // Update hotel in mock data
-        const { mockHotels } = await import('../utils/mockData');
-        const index = mockHotels.findIndex((h: any) => h._id === editingHotel._id);
-        if (index !== -1) {
-          mockHotels[index] = { ...mockHotels[index], ...hotelData };
-        }
+      const response = await fetch(url, {
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(hotelData)
+      });
+      
+      if (response.ok) {
+        fetchHotels();
+        setShowModal(false);
+        setEditingHotel(null);
+        setFormData({ name: '', location: '', description: '', amenities: '', imageUrl: '' });
+        alert(editingHotel ? 'Hotel updated successfully!' : 'Hotel added successfully!');
       } else {
-        // Add new hotel to mock data
-        const newHotel = {
-          _id: Date.now().toString(),
-          ...hotelData
-        };
-        addHotel(newHotel);
+        alert('Error saving hotel');
       }
-      
-      // Refresh hotels list
-      fetchHotels();
-      
-      setShowModal(false);
-      setEditingHotel(null);
-      setFormData({ name: '', location: '', description: '', amenities: '', imageUrl: '' });
-      
-      alert(editingHotel ? 'Hotel updated successfully!' : 'Hotel added successfully!');
     } catch (error) {
       console.error('Error saving hotel:', error);
       alert('Error saving hotel');
@@ -108,15 +107,20 @@ const Hotels: React.FC = () => {
   const handleDelete = async (id: string) => {
     if (window.confirm('Are you sure you want to delete this hotel?')) {
       try {
-        const { mockHotels } = await import('../utils/mockData');
-        const index = mockHotels.findIndex((h: any) => h._id === id);
-        if (index !== -1) {
-          mockHotels.splice(index, 1);
-        }
+        const token = localStorage.getItem('token');
+        const response = await fetch(`/api/hotels/${id}`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
         
-        // Refresh hotels list
-        fetchHotels();
-        alert('Hotel deleted successfully!');
+        if (response.ok) {
+          fetchHotels();
+          alert('Hotel deleted successfully!');
+        } else {
+          alert('Error deleting hotel');
+        }
       } catch (error) {
         console.error('Error deleting hotel:', error);
         alert('Error deleting hotel');

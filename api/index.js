@@ -22,6 +22,29 @@ userSchema.methods.comparePassword = async function(candidatePassword) {
 
 const User = mongoose.models.User || mongoose.model('User', userSchema);
 
+// Hotel Schema
+const hotelSchema = new mongoose.Schema({
+  name: { type: String, required: true },
+  location: { type: String, required: true },
+  description: { type: String, required: true },
+  amenities: [String],
+  rating: { type: Number, default: 4.0 },
+  imageUrl: String,
+  managerId: { type: String, required: true },
+  rooms: [{
+    _id: String,
+    roomNumber: String,
+    type: String,
+    price: Number,
+    capacity: Number,
+    amenities: [String],
+    isAvailable: { type: Boolean, default: true },
+    imageUrl: String
+  }]
+}, { timestamps: true });
+
+const Hotel = mongoose.models.Hotel || mongoose.model('Hotel', hotelSchema);
+
 // Connect to MongoDB
 if (!mongoose.connection.readyState) {
   mongoose.connect(process.env.MONGODB_URI);
@@ -97,6 +120,58 @@ export default async function handler(req, res) {
         success: true,
         user: { id: user._id, name: user.name, email: user.email, role: user.role }
       });
+    }
+
+    // Hotel Management Routes
+    if (method === 'GET' && path.startsWith('/hotels')) {
+      const token = req.headers.authorization?.replace('Bearer ', '');
+      if (!token) {
+        return res.status(401).json({ message: 'No token provided' });
+      }
+
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      const hotels = await Hotel.find({ managerId: decoded.id });
+      return res.json({ success: true, hotels });
+    }
+
+    if (method === 'POST' && path === '/hotels') {
+      const token = req.headers.authorization?.replace('Bearer ', '');
+      if (!token) {
+        return res.status(401).json({ message: 'No token provided' });
+      }
+
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      const hotelData = { ...req.body, managerId: decoded.id };
+      const hotel = await Hotel.create(hotelData);
+      return res.status(201).json({ success: true, hotel });
+    }
+
+    if (method === 'PUT' && path.startsWith('/hotels/')) {
+      const hotelId = path.split('/')[2];
+      const token = req.headers.authorization?.replace('Bearer ', '');
+      if (!token) {
+        return res.status(401).json({ message: 'No token provided' });
+      }
+
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      const hotel = await Hotel.findOneAndUpdate(
+        { _id: hotelId, managerId: decoded.id },
+        req.body,
+        { new: true }
+      );
+      return res.json({ success: true, hotel });
+    }
+
+    if (method === 'DELETE' && path.startsWith('/hotels/')) {
+      const hotelId = path.split('/')[2];
+      const token = req.headers.authorization?.replace('Bearer ', '');
+      if (!token) {
+        return res.status(401).json({ message: 'No token provided' });
+      }
+
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      await Hotel.findOneAndDelete({ _id: hotelId, managerId: decoded.id });
+      return res.json({ success: true, message: 'Hotel deleted' });
     }
 
     if (method === 'GET' && path === '/test') {
