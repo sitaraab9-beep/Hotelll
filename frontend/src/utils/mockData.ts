@@ -94,42 +94,75 @@ export const mockHotels = [
   }
 ];
 
-export const mockBookings = [
+export let mockBookings = [
   {
     _id: 'b1',
+    customerId: '1',
+    customerName: 'Demo User',
+    customerEmail: 'demo@example.com',
     roomId: {
+      _id: '101',
       roomNumber: '101',
       type: 'single',
       price: 150
     },
     hotelId: {
+      _id: '1',
       name: 'Grand Plaza Hotel',
       location: 'New York, USA'
     },
     checkIn: '2024-01-15',
     checkOut: '2024-01-18',
     totalPrice: 450,
-    status: 'confirmed',
+    status: 'approved',
     guests: 1,
     specialRequests: 'Late check-in',
     createdAt: '2024-01-10'
   },
   {
     _id: 'b2',
+    customerId: '1',
+    customerName: 'Demo User',
+    customerEmail: 'demo@example.com',
     roomId: {
+      _id: '201',
       roomNumber: '201',
       type: 'double',
       price: 180
     },
     hotelId: {
+      _id: '2',
       name: 'Ocean View Resort',
       location: 'Miami, USA'
     },
     checkIn: '2024-02-10',
     checkOut: '2024-02-14',
     totalPrice: 720,
-    status: 'confirmed',
+    status: 'pending',
     guests: 2,
     createdAt: '2024-02-05'
   }
 ];
+
+export let mockFavorites = ['1'];
+
+export const addBooking = (booking: any) => {
+  mockBookings.push(booking);
+};
+
+export const updateBookingStatus = (bookingId: string, status: string) => {
+  const index = mockBookings.findIndex(b => b._id === bookingId);
+  if (index !== -1) {
+    mockBookings[index].status = status;
+  }
+};
+
+export const toggleFavorite = (hotelId: string) => {
+  const index = mockFavorites.indexOf(hotelId);
+  if (index > -1) {
+    mockFavorites.splice(index, 1);
+  } else {
+    mockFavorites.push(hotelId);
+  }
+  return mockFavorites.includes(hotelId);
+};

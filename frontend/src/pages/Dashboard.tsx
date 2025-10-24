@@ -94,9 +94,10 @@ const Dashboard: React.FC = () => {
       );
       setRooms(allRooms);
       
-      // Mock favorites
+      // Load favorites
       if (user?.role === 'customer') {
-        setFavorites(['1']); // Mock favorite hotel
+        const { mockFavorites } = await import('../utils/mockData');
+        setFavorites([...mockFavorites]);
       }
     } catch (error) {
       console.error('Error fetching hotels and rooms:', error);
@@ -145,33 +146,13 @@ const Dashboard: React.FC = () => {
 
   const toggleFavorite = async (hotelId: string) => {
     try {
-      const token = localStorage.getItem('token');
-      const isFavorite = favorites.includes(hotelId);
+      const { toggleFavorite: toggleFav } = await import('../utils/mockData');
+      const isFavorite = toggleFav(hotelId);
       
       if (isFavorite) {
-        // Remove from favorites
-        const response = await fetch(`/api/favorites/${hotelId}`, {
-          method: 'DELETE',
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-        
-        if (response.ok) {
-          setFavorites(favorites.filter(id => id !== hotelId));
-        }
+        setFavorites([...favorites, hotelId]);
       } else {
-        // Add to favorites
-        const response = await fetch('/api/favorites', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          },
-          body: JSON.stringify({ hotelId })
-        });
-        
-        if (response.ok) {
-          setFavorites([...favorites, hotelId]);
-        }
+        setFavorites(favorites.filter(id => id !== hotelId));
       }
     } catch (error) {
       console.error('Error toggling favorite:', error);

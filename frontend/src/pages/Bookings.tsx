@@ -70,12 +70,65 @@ const Bookings: React.FC = () => {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'confirmed': return 'bg-green-100 text-green-800';
+      case 'approved': return 'bg-green-100 text-green-800';
       case 'pending': return 'bg-yellow-100 text-yellow-800';
       case 'cancelled': return 'bg-red-100 text-red-800';
       case 'completed': return 'bg-blue-100 text-blue-800';
       default: return 'bg-gray-100 text-gray-800';
     }
+  };
+
+  const generateQRCode = (bookingId: string) => {
+    // Simple QR code placeholder - in real app would use QR library
+    return `https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=Booking-${bookingId}`;
+  };
+
+  const downloadTicket = (booking: any) => {
+    const qrCodeUrl = generateQRCode(booking._id);
+    const ticketContent = `
+===========================================
+           HOTELEASE BOOKING TICKET
+===========================================
+
+Booking ID: ${booking._id}
+Customer: ${booking.customerName || 'N/A'}
+Email: ${booking.customerEmail || 'N/A'}
+
+HOTEL DETAILS:
+Name: ${booking.hotelId.name}
+Location: ${booking.hotelId.location}
+
+ROOM DETAILS:
+Room Number: ${booking.roomId.roomNumber}
+Room Type: ${booking.roomId.type}
+Price per Night: $${booking.roomId.price}
+
+BOOKING DETAILS:
+Check-in: ${new Date(booking.checkIn).toLocaleDateString()}
+Check-out: ${new Date(booking.checkOut).toLocaleDateString()}
+Guests: ${booking.guests}
+Total Price: $${booking.totalPrice}
+Status: ${booking.status.toUpperCase()}
+
+Special Requests: ${booking.specialRequests || 'None'}
+
+Booked on: ${new Date(booking.createdAt).toLocaleDateString()}
+
+QR Code: ${qrCodeUrl}
+
+Thank you for choosing HotelEase!
+For support: support@hotelease.com
+
+===========================================
+    `;
+
+    const blob = new Blob([ticketContent], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `HotelEase-Ticket-${booking._id}.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
   };
 
   if (loading) return (
@@ -147,14 +200,24 @@ const Bookings: React.FC = () => {
                       <p className="text-2xl font-bold text-green-600">${booking.totalPrice}</p>
                     </div>
                     
-                    {booking.status === 'confirmed' && (
-                      <button
-                        onClick={() => cancelBooking(booking._id)}
-                        className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 transition-colors"
-                      >
-                        Cancel Booking
-                      </button>
-                    )}
+                    <div className="flex gap-2">
+                      {booking.status === 'approved' && (
+                        <button
+                          onClick={() => downloadTicket(booking)}
+                          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition-colors"
+                        >
+                          🎟️ Download Ticket
+                        </button>
+                      )}
+                      {(booking.status === 'pending' || booking.status === 'approved') && (
+                        <button
+                          onClick={() => cancelBooking(booking._id)}
+                          className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 transition-colors"
+                        >
+                          Cancel
+                        </button>
+                      )}
+                    </div>
                   </div>
                   
                   <div className="mt-2">

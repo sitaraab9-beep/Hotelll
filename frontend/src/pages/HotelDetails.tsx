@@ -74,8 +74,38 @@ const HotelDetails: React.FC = () => {
     await new Promise(resolve => setTimeout(resolve, 1000));
     
     try {
-      // Mock booking success
-      alert('Booking confirmed successfully!');
+      const { addBooking } = await import('../utils/mockData');
+      const room = hotel?.rooms.find(r => r._id === roomId);
+      const days = Math.ceil((new Date(bookingData.checkOut).getTime() - new Date(bookingData.checkIn).getTime()) / (1000 * 60 * 60 * 24));
+      const totalPrice = room ? room.price * days : 0;
+      
+      const newBooking = {
+        _id: 'b' + Date.now(),
+        customerId: user.id,
+        customerName: user.name,
+        customerEmail: user.email,
+        roomId: {
+          _id: roomId,
+          roomNumber: room?.roomNumber || '',
+          type: room?.type || '',
+          price: room?.price || 0
+        },
+        hotelId: {
+          _id: hotel?._id || '',
+          name: hotel?.name || '',
+          location: hotel?.location || ''
+        },
+        checkIn: bookingData.checkIn,
+        checkOut: bookingData.checkOut,
+        totalPrice,
+        status: 'pending',
+        guests: bookingData.guests,
+        specialRequests: bookingData.specialRequests,
+        createdAt: new Date().toISOString()
+      };
+      
+      addBooking(newBooking);
+      alert('🎉 Room booked successfully! Your booking is pending manager approval. You will be notified once approved.');
       navigate('/bookings');
     } catch (err) {
       alert('Error creating booking');
