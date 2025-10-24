@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { mockHotels, mockBookings } from '../utils/mockData';
 
 interface Hotel {
   _id: string;
@@ -52,7 +51,8 @@ const Dashboard: React.FC = () => {
     await new Promise(resolve => setTimeout(resolve, 300));
     
     try {
-      const allRooms = mockHotels.flatMap(hotel => hotel.rooms);
+      const { mockHotels, mockBookings } = await import('../utils/mockData');
+      const allRooms = mockHotels.flatMap((hotel: any) => hotel.rooms || []);
       
       setStats({
         hotels: mockHotels.length,
@@ -74,17 +74,19 @@ const Dashboard: React.FC = () => {
     await new Promise(resolve => setTimeout(resolve, 500));
     
     try {
+      const { mockHotels, getFavorites } = await import('../utils/mockData');
+      
       // Set mock hotels with proper interface
-      const mappedHotels = mockHotels.map(hotel => ({
+      const mappedHotels = mockHotels.map((hotel: any) => ({
         ...hotel,
         images: [],
-        totalRooms: hotel.rooms.length
+        totalRooms: hotel.rooms ? hotel.rooms.length : 0
       }));
       setHotels(mappedHotels);
       
       // Flatten all rooms from hotels
-      const allRooms = mockHotels.flatMap(hotel => 
-        hotel.rooms.map(room => ({
+      const allRooms = mockHotels.flatMap((hotel: any) => 
+        (hotel.rooms || []).map((room: any) => ({
           ...room,
           hotelId: hotel._id,
           availability: room.isAvailable,
@@ -96,7 +98,6 @@ const Dashboard: React.FC = () => {
       
       // Load favorites
       if (user?.role === 'customer') {
-        const { getFavorites } = await import('../utils/mockData');
         const userFavorites = getFavorites(user.id);
         setFavorites(userFavorites.map((fav: any) => fav.hotelId));
       }
@@ -124,9 +125,9 @@ const Dashboard: React.FC = () => {
     if (!user) return;
     
     try {
-      const { addBooking } = await import('../utils/mockData');
-      const hotel = mockHotels.find(h => h._id === selectedHotel);
-      const room = hotel?.rooms.find(r => r._id === selectedRoom);
+      const { addBooking, mockHotels } = await import('../utils/mockData');
+      const hotel = mockHotels.find((h: any) => h._id === selectedHotel);
+      const room = hotel?.rooms?.find((r: any) => r._id === selectedRoom);
       
       if (!room || !hotel) {
         alert('Room or hotel not found');
@@ -177,8 +178,8 @@ const Dashboard: React.FC = () => {
     if (!user) return;
     
     try {
-      const hotel = mockHotels.find(h => h._id === hotelId);
-      const { toggleFavorite: toggleFav } = await import('../utils/mockData');
+      const { mockHotels, toggleFavorite: toggleFav } = await import('../utils/mockData');
+      const hotel = mockHotels.find((h: any) => h._id === hotelId);
       const result = toggleFav(user.id, hotelId, hotel?.name || '', hotel?.location || '');
       
       if (result.isFavorite) {
@@ -426,7 +427,7 @@ const Dashboard: React.FC = () => {
                     </svg>
                   </div>
                 </div>
-                <p className="text-3xl font-bold text-gray-900">{mockBookings.length}</p>
+                <p className="text-3xl font-bold text-gray-900">{stats.bookings}</p>
                 <p className="text-sm text-gray-500 mt-2">Active reservations</p>
               </div>
             </div>
