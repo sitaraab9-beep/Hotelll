@@ -60,6 +60,10 @@ const HotelDetails: React.FC = () => {
   };
 
   const handleBooking = async (roomId: string) => {
+    console.log('Booking started for room:', roomId);
+    console.log('User:', user);
+    console.log('Booking data:', bookingData);
+    
     if (!user) {
       navigate('/login');
       return;
@@ -70,14 +74,25 @@ const HotelDetails: React.FC = () => {
       return;
     }
 
-    // Simulate booking process
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
     try {
       const { addBooking } = await import('../utils/mockData');
       const room = hotel?.rooms.find(r => r._id === roomId);
-      const days = Math.ceil((new Date(bookingData.checkOut).getTime() - new Date(bookingData.checkIn).getTime()) / (1000 * 60 * 60 * 24));
-      const totalPrice = room ? room.price * days : 0;
+      
+      if (!room) {
+        alert('Room not found');
+        return;
+      }
+      
+      const checkInDate = new Date(bookingData.checkIn);
+      const checkOutDate = new Date(bookingData.checkOut);
+      
+      if (checkOutDate <= checkInDate) {
+        alert('Check-out date must be after check-in date');
+        return;
+      }
+      
+      const days = Math.ceil((checkOutDate.getTime() - checkInDate.getTime()) / (1000 * 60 * 60 * 24));
+      const totalPrice = room.price * days;
       
       const newBooking = {
         _id: 'b' + Date.now(),
@@ -86,14 +101,14 @@ const HotelDetails: React.FC = () => {
         customerEmail: user.email,
         roomId: {
           _id: roomId,
-          roomNumber: room?.roomNumber || '',
-          type: room?.type || '',
-          price: room?.price || 0
+          roomNumber: room.roomNumber,
+          type: room.type,
+          price: room.price
         },
         hotelId: {
-          _id: hotel?._id || '',
-          name: hotel?.name || '',
-          location: hotel?.location || ''
+          _id: hotel._id,
+          name: hotel.name,
+          location: hotel.location
         },
         checkIn: bookingData.checkIn,
         checkOut: bookingData.checkOut,
@@ -104,11 +119,14 @@ const HotelDetails: React.FC = () => {
         createdAt: new Date().toISOString()
       };
       
+      console.log('Creating booking:', newBooking);
       addBooking(newBooking);
+      
       alert('🎉 Booking submitted successfully! \n\n⏳ Your booking is now PENDING and waiting for manager approval. \n\n📧 You will be notified once the manager reviews your request. \n\n📋 You can check the status in "My Bookings" section.');
       navigate('/bookings');
     } catch (err) {
-      alert('Error creating booking');
+      console.error('Booking error:', err);
+      alert('Error creating booking: ' + (err as Error).message);
     }
   };
 
