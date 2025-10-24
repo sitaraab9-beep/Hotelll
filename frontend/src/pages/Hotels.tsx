@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { mockHotels } from '../utils/mockData';
+import { useAuth } from '../context/AuthContext';
 
 interface Hotel {
   _id: string;
@@ -9,9 +9,12 @@ interface Hotel {
   amenities: string[];
   rating: number;
   imageUrl?: string;
+  managerId?: string;
+  rooms?: any[];
 }
 
 const Hotels: React.FC = () => {
+  const { user } = useAuth();
   const [hotels, setHotels] = useState<Hotel[]>([]);
   const [showModal, setShowModal] = useState(false);
   const [editingHotel, setEditingHotel] = useState<Hotel | null>(null);
@@ -24,38 +27,70 @@ const Hotels: React.FC = () => {
   });
 
   useEffect(() => {
-    // Load mock hotels
-    setHotels(mockHotels.map(h => ({ ...h, amenities: h.amenities || [] })));
-  }, []);
+    fetchHotels();
+  }, [user]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const fetchHotels = async () => {
+    if (!user) return;
+    
+    try {
+      const { mockHotels, getHotelsByManager } = await import('../utils/mockData');
+      
+      if (user.role === 'manager') {
+        const managerHotels = getHotelsByManager(user.id);
+        setHotels(managerHotels);
+      } else {
+        setHotels(mockHotels);
+      }
+    } catch (error) {
+      console.error('Error fetching hotels:', error);
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!user) return;
     
     const hotelData = {
       ...formData,
-      amenities: formData.amenities.split(',').map(a => a.trim()).filter(a => a),
-      rating: 4.0
+      amenities: formData.amenities.split(',').map((a: string) => a.trim()).filter((a: string) => a),
+      rating: 4.0,
+      managerId: user.id,
+      rooms: []
     };
 
-    if (editingHotel) {
-      // Update hotel
-      setHotels(prev => prev.map(h => 
-        h._id === editingHotel._id 
-          ? { ...h, ...hotelData }
-          : h
-      ));
-    } else {
-      // Add new hotel
-      const newHotel = {
-        _id: Date.now().toString(),
-        ...hotelData
-      };
-      setHotels(prev => [...prev, newHotel]);
+    try {
+      const { addHotel } = await import('../utils/mockData');
+      
+      if (editingHotel) {
+        // Update hotel in mock data
+        const { mockHotels } = await import('../utils/mockData');
+        const index = mockHotels.findIndex((h: any) => h._id === editingHotel._id);
+        if (index !== -1) {
+          mockHotels[index] = { ...mockHotels[index], ...hotelData };
+        }
+      } else {
+        // Add new hotel to mock data
+        const newHotel = {
+          _id: Date.now().toString(),
+          ...hotelData
+        };
+        addHotel(newHotel);
+      }
+      
+      // Refresh hotels list
+      fetchHotels();
+      
+      setShowModal(false);
+      setEditingHotel(null);
+      setFormData({ name: '', location: '', description: '', amenities: '', imageUrl: '' });
+      
+      alert(editingHotel ? 'Hotel updated successfully!' : 'Hotel added successfully!');
+    } catch (error) {
+      console.error('Error saving hotel:', error);
+      alert('Error saving hotel');
     }
-
-    setShowModal(false);
-    setEditingHotel(null);
-    setFormData({ name: '', location: '', description: '', amenities: '', imageUrl: '' });
   };
 
   const handleEdit = (hotel: Hotel) => {
@@ -70,9 +105,22 @@ const Hotels: React.FC = () => {
     setShowModal(true);
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     if (window.confirm('Are you sure you want to delete this hotel?')) {
-      setHotels(prev => prev.filter(h => h._id !== id));
+      try {
+        const { mockHotels } = await import('../utils/mockData');
+        const index = mockHotels.findIndex((h: any) => h._id === id);
+        if (index !== -1) {
+          mockHotels.splice(index, 1);
+        }
+        
+        // Refresh hotels list
+        fetchHotels();
+        alert('Hotel deleted successfully!');
+      } catch (error) {
+        console.error('Error deleting hotel:', error);
+        alert('Error deleting hotel');
+      }
     }
   };
 
@@ -125,7 +173,7 @@ const Hotels: React.FC = () => {
                   
                   {hotel.amenities.length > 0 && (
                     <div className="flex flex-wrap gap-1">
-                      {hotel.amenities.slice(0, 3).map((amenity, index) => (
+                      {hotel.amenities.slice(0, 3).map((amenity: string, index: number) => (
                         <span key={index} className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs">
                           {amenity}
                         </span>
