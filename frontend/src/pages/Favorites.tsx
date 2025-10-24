@@ -92,7 +92,7 @@ const Favorites: React.FC = () => {
                   {hotel.amenities && hotel.amenities.length > 0 && (
                     <div className="mb-4">
                       <div className="flex flex-wrap gap-1">
-                        {hotel.amenities.slice(0, 3).map((amenity, index) => (
+                        {hotel.amenities.slice(0, 3).map((amenity: string, index: number) => (
                           <span key={index} className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">
                             {amenity}
                           </span>
