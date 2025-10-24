@@ -96,8 +96,9 @@ const Dashboard: React.FC = () => {
       
       // Load favorites
       if (user?.role === 'customer') {
-        const { mockFavorites } = await import('../utils/mockData');
-        setFavorites([...mockFavorites]);
+        const { getFavorites } = await import('../utils/mockData');
+        const userFavorites = getFavorites(user.id);
+        setFavorites(userFavorites.map((fav: any) => fav.hotelId));
       }
     } catch (error) {
       console.error('Error fetching hotels and rooms:', error);
@@ -145,11 +146,14 @@ const Dashboard: React.FC = () => {
   };
 
   const toggleFavorite = async (hotelId: string) => {
+    if (!user) return;
+    
     try {
+      const hotel = mockHotels.find(h => h._id === hotelId);
       const { toggleFavorite: toggleFav } = await import('../utils/mockData');
-      const isFavorite = toggleFav(hotelId);
+      const result = toggleFav(user.id, hotelId, hotel?.name || '', hotel?.location || '');
       
-      if (isFavorite) {
+      if (result.isFavorite) {
         setFavorites([...favorites, hotelId]);
       } else {
         setFavorites(favorites.filter(id => id !== hotelId));

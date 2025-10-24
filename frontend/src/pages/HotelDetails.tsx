@@ -105,7 +105,7 @@ const HotelDetails: React.FC = () => {
       };
       
       addBooking(newBooking);
-      alert('🎉 Room booked successfully! Your booking is pending manager approval. You will be notified once approved.');
+      alert('🎉 Booking submitted successfully! \n\n⏳ Your booking is now PENDING and waiting for manager approval. \n\n📧 You will be notified once the manager reviews your request. \n\n📋 You can check the status in "My Bookings" section.');
       navigate('/bookings');
     } catch (err) {
       alert('Error creating booking');

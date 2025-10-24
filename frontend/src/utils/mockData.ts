@@ -144,7 +144,7 @@ export let mockBookings = [
   }
 ];
 
-export let mockFavorites = ['1'];
+export let mockFavorites: any[] = [];
 
 export const addBooking = (booking: any) => {
   mockBookings.push(booking);
@@ -157,12 +157,25 @@ export const updateBookingStatus = (bookingId: string, status: string) => {
   }
 };
 
-export const toggleFavorite = (hotelId: string) => {
-  const index = mockFavorites.indexOf(hotelId);
-  if (index > -1) {
-    mockFavorites.splice(index, 1);
+export const getFavorites = (userId: string) => {
+  return mockFavorites.filter(fav => fav.userId === userId);
+};
+
+export const toggleFavorite = (userId: string, hotelId: string, hotelName: string, hotelLocation: string) => {
+  const existingIndex = mockFavorites.findIndex(fav => fav.userId === userId && fav.hotelId === hotelId);
+  
+  if (existingIndex > -1) {
+    mockFavorites.splice(existingIndex, 1);
+    return { isFavorite: false };
   } else {
-    mockFavorites.push(hotelId);
+    mockFavorites.push({
+      _id: 'fav' + Date.now(),
+      userId,
+      hotelId,
+      hotelName,
+      hotelLocation,
+      createdAt: new Date().toISOString()
+    });
+    return { isFavorite: true };
   }
-  return mockFavorites.includes(hotelId);
 };
