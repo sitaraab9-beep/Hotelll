@@ -106,9 +106,9 @@ const HotelDetails: React.FC = () => {
           price: room.price
         },
         hotelId: {
-          _id: hotel._id,
-          name: hotel.name,
-          location: hotel.location
+          _id: hotel?._id || '',
+          name: hotel?.name || '',
+          location: hotel?.location || ''
         },
         checkIn: bookingData.checkIn,
         checkOut: bookingData.checkOut,
