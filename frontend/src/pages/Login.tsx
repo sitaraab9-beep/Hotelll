@@ -27,23 +27,31 @@ const Login: React.FC = () => {
   };
 
   const handleGoogleSignIn = async () => {
+    // Mock Google sign-in for demo purposes
     try {
-      const response = await fetch('/api/auth/google-auth', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ credential: 'mock-google-jwt-token' }),
-      });
-
-      const data = await response.json();
-      if (data.success) {
-        localStorage.setItem('token', data.token);
-        navigate('/dashboard');
-        window.location.reload();
-      } else {
-        setError(data.message || 'Google login failed');
+      const mockGoogleUser = {
+        id: 'google-' + Date.now(),
+        name: 'Google User',
+        email: 'google@example.com',
+        role: 'customer' as const
+      };
+      
+      const allUsers = JSON.parse(localStorage.getItem('allUsers') || '[]');
+      const existingUser = allUsers.find((u: any) => u.email === mockGoogleUser.email);
+      
+      const userToLogin = existingUser || mockGoogleUser;
+      
+      if (!existingUser) {
+        allUsers.push(mockGoogleUser);
+        localStorage.setItem('allUsers', JSON.stringify(allUsers));
       }
+      
+      const mockToken = 'mock-token-' + Date.now();
+      localStorage.setItem('token', mockToken);
+      localStorage.setItem('userData', JSON.stringify(userToLogin));
+      
+      navigate('/dashboard');
+      window.location.reload();
     } catch (error) {
       setError('Google login failed');
     }
