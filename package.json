@@ -3,7 +3,8 @@
   "version": "1.0.0",
   "description": "HotelEase Full-Stack Application",
   "scripts": {
-    "build": "cd frontend && npm install && npm run build",
+    "build": "cd frontend && npm install && npm run build && cp -r build/* ../public/",
+    "vercel-build": "cd frontend && npm install && npm run build",
     "start": "cd backend && npm start",
     "dev": "concurrently \"cd backend && npm run dev\" \"cd frontend && npm start\"",
     "install-all": "cd backend && npm install && cd ../frontend && npm install"
