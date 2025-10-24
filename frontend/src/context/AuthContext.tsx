@@ -72,23 +72,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     if (email && password) {
       // Try to find existing user in all registered users
       const allUsers = JSON.parse(localStorage.getItem('allUsers') || '[]');
-      let mockUser = allUsers.find((u: User) => u.email === email);
-      
-      console.log('Login attempt for:', email);
-      console.log('All users:', allUsers);
-      console.log('Found user:', mockUser);
+      const mockUser = allUsers.find((u: User) => u.email === email);
       
       if (!mockUser) {
-        // User not found, create new customer
-        mockUser = {
-          id: Date.now().toString(),
-          name: email.split('@')[0],
-          email: email,
-          role: 'customer' as const
-        };
-        allUsers.push(mockUser);
-        localStorage.setItem('allUsers', JSON.stringify(allUsers));
-        console.log('Created new customer user:', mockUser);
+        throw new Error('User not found. Please register first.');
       }
       
       const mockToken = 'mock-token-' + Date.now();
@@ -96,7 +83,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       localStorage.setItem('token', mockToken);
       localStorage.setItem('userData', JSON.stringify(mockUser));
       setUser(mockUser);
-      console.log('Login successful, user set to:', mockUser);
       return;
     }
     throw new Error('Please enter email and password');
