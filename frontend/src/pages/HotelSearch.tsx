@@ -54,7 +54,7 @@ const HotelSearch: React.FC = () => {
       
       if (filters.roomType) {
         filteredHotels = filteredHotels.filter(hotel => 
-          hotel.rooms.some(room => room.type === filters.roomType)
+          hotel.rooms.some((room: any) => room.type === filters.roomType)
         );
       }
       
