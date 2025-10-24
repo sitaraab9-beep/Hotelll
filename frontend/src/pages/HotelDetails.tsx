@@ -238,7 +238,7 @@ const HotelDetails: React.FC = () => {
                         <p className="text-sm text-gray-600">Capacity: {room.capacity} guests</p>
                       </div>
                       <div className="text-right">
-                        <div className="text-lg font-bold text-green-600">${room.price}/night</div>
+                        <div className="text-lg font-bold text-green-600">₹{room.price}/night</div>
                         <div className={`text-sm ${room.isAvailable ? 'text-green-600' : 'text-red-600'}`}>
                           {room.isAvailable ? 'Available' : 'Booked'}
                         </div>

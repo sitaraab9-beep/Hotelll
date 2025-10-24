@@ -503,7 +503,7 @@ const Dashboard: React.FC = () => {
                           {minPrice > 0 && (
                             <div className="text-center mb-3">
                               <div className="text-lg font-bold text-green-600">
-                                ${minPrice}/night
+                                ₹{minPrice}/night
                               </div>
                             </div>
                           )}

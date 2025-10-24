@@ -132,7 +132,7 @@ const ManagerBookings: React.FC = () => {
                   <div className="flex justify-between items-center pt-4 border-t">
                     <div>
                       <p className="text-sm text-gray-500">Total Price</p>
-                      <p className="text-2xl font-bold text-green-600">${booking.totalPrice}</p>
+                      <p className="text-2xl font-bold text-green-600">₹{booking.totalPrice}</p>
                     </div>
                     
                     {booking.status === 'pending' && (

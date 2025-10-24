@@ -103,13 +103,13 @@ Location: ${booking.hotelId.location}
 ROOM DETAILS:
 Room Number: ${booking.roomId.roomNumber}
 Room Type: ${booking.roomId.type}
-Price per Night: $${booking.roomId.price}
+Price per Night: ₹${booking.roomId.price}
 
 BOOKING DETAILS:
 Check-in: ${new Date(booking.checkIn).toLocaleDateString()}
 Check-out: ${new Date(booking.checkOut).toLocaleDateString()}
 Guests: ${booking.guests}
-Total Price: $${booking.totalPrice}
+Total Price: ₹${booking.totalPrice}
 Status: ${booking.status.toUpperCase()}
 
 Special Requests: ${booking.specialRequests || 'None'}
@@ -199,7 +199,7 @@ For support: support@hotelease.com
                   <div className="flex justify-between items-center pt-4 border-t">
                     <div>
                       <p className="text-sm text-gray-500">Total Price</p>
-                      <p className="text-2xl font-bold text-green-600">${booking.totalPrice}</p>
+                      <p className="text-2xl font-bold text-green-600">₹{booking.totalPrice}</p>
                     </div>
                     
                     <div className="flex gap-2">

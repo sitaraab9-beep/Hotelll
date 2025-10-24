@@ -181,7 +181,7 @@ const Rooms: React.FC = () => {
                 <p className="text-gray-600 mb-2">🏨 {room.hotelName}</p>
                 <p className="text-gray-600 mb-2">🚪 Room {room.roomNumber}</p>
                 <p className="text-gray-600 mb-2">👥 Capacity: {room.capacity} guests</p>
-                <p className="text-green-600 font-bold mb-3">${room.price}/night</p>
+                <p className="text-green-600 font-bold mb-3">₹{room.price}/night</p>
                 
                 {room.amenities.length > 0 && (
                   <div className="mb-4">
@@ -287,14 +287,13 @@ const Rooms: React.FC = () => {
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium mb-1">Price per Night ($)</label>
+                  <label className="block text-sm font-medium mb-1">Price per Night (₹)</label>
                   <input
-                    type="number"
+                    type="text"
                     value={formData.price}
                     onChange={(e) => setFormData({...formData, price: e.target.value})}
                     className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500"
-                    min="0"
-                    step="0.01"
+                    placeholder="Enter price in rupees"
                     required
                   />
                 </div>

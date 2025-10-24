@@ -34,20 +34,32 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Initialize your specific user if not exists
+    // Initialize default users if not exists
     const allUsers = JSON.parse(localStorage.getItem('allUsers') || '[]');
-    const existingUser = allUsers.find((u: any) => u.email === 'hman@gmail.com');
     
-    if (!existingUser) {
-      const yourUser = {
+    const defaultUsers = [
+      {
         id: 'manager1',
         name: 'Hotel Manager',
         email: 'hman@gmail.com',
         role: 'manager'
-      };
-      allUsers.push(yourUser);
-      localStorage.setItem('allUsers', JSON.stringify(allUsers));
-    }
+      },
+      {
+        id: 'admin1',
+        name: 'System Admin',
+        email: 'admin@gmail.com',
+        role: 'admin'
+      }
+    ];
+    
+    defaultUsers.forEach(defaultUser => {
+      const existingUser = allUsers.find((u: any) => u.email === defaultUser.email);
+      if (!existingUser) {
+        allUsers.push(defaultUser);
+      }
+    });
+    
+    localStorage.setItem('allUsers', JSON.stringify(allUsers));
     
     const token = localStorage.getItem('token');
     if (token) {
