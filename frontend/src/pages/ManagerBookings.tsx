@@ -1,24 +1,40 @@
 import React, { useState, useEffect } from 'react';
-import { mockBookings, updateBookingStatus } from '../utils/mockData';
+import { useAuth } from '../context/AuthContext';
+import { updateBookingStatus } from '../utils/mockData';
 
 const ManagerBookings: React.FC = () => {
-  const [bookings, setBookings] = useState(mockBookings);
+  const { user } = useAuth();
+  const [bookings, setBookings] = useState<any[]>([]);
   const [filter, setFilter] = useState('all');
 
   useEffect(() => {
-    setBookings([...mockBookings]);
-  }, []);
+    if (user && user.role === 'manager') {
+      fetchManagerBookings();
+    }
+  }, [user]);
+
+  const fetchManagerBookings = async () => {
+    if (!user) return;
+    
+    try {
+      const { getBookingsByManager } = await import('../utils/mockData');
+      const managerBookings = getBookingsByManager(user.id);
+      setBookings(managerBookings);
+    } catch (error) {
+      console.error('Error fetching manager bookings:', error);
+    }
+  };
 
   const handleApprove = (bookingId: string) => {
     updateBookingStatus(bookingId, 'approved');
-    setBookings([...mockBookings]);
+    fetchManagerBookings();
     alert('✅ Booking approved! Customer has been notified and can now download their ticket.');
   };
 
   const handleReject = (bookingId: string) => {
     if (window.confirm('Are you sure you want to reject this booking?')) {
       updateBookingStatus(bookingId, 'cancelled');
-      setBookings([...mockBookings]);
+      fetchManagerBookings();
       alert('❌ Booking rejected. Customer has been notified.');
     }
   };

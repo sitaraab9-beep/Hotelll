@@ -35,12 +35,15 @@ const Bookings: React.FC = () => {
   }, [user]);
 
   const fetchBookings = async () => {
+    if (!user) return;
+    
     // Simulate API delay
     await new Promise(resolve => setTimeout(resolve, 500));
     
     try {
-      // Return mock bookings
-      setBookings(mockBookings);
+      const { getBookingsByCustomer } = await import('../utils/mockData');
+      const userBookings = getBookingsByCustomer(user.id);
+      setBookings(userBookings);
     } catch (err) {
       setError('Error fetching bookings');
     } finally {

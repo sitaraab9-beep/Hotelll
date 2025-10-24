@@ -1,153 +1,29 @@
-export const mockHotels = [
-  {
-    _id: '1',
-    name: 'Grand Plaza Hotel',
-    location: 'New York, USA',
-    description: 'Luxury hotel in the heart of Manhattan with stunning city views.',
-    rating: 4.5,
-    amenities: ['WiFi', 'Pool', 'Gym', 'Restaurant', 'Spa'],
-    rooms: [
-      {
-        _id: '101',
-        roomNumber: '101',
-        type: 'single',
-        price: 150,
-        capacity: 1,
-        amenities: ['WiFi', 'TV', 'AC'],
-        isAvailable: true
-      },
-      {
-        _id: '102',
-        roomNumber: '102',
-        type: 'double',
-        price: 200,
-        capacity: 2,
-        amenities: ['WiFi', 'TV', 'AC', 'Mini Bar'],
-        isAvailable: true
-      },
-      {
-        _id: '103',
-        roomNumber: '103',
-        type: 'suite',
-        price: 350,
-        capacity: 4,
-        amenities: ['WiFi', 'TV', 'AC', 'Mini Bar', 'Balcony'],
-        isAvailable: true
-      }
-    ]
-  },
-  {
-    _id: '2',
-    name: 'Ocean View Resort',
-    location: 'Miami, USA',
-    description: 'Beautiful beachfront resort with ocean views and tropical gardens.',
-    rating: 4.3,
-    amenities: ['WiFi', 'Beach Access', 'Pool', 'Restaurant', 'Bar'],
-    rooms: [
-      {
-        _id: '201',
-        roomNumber: '201',
-        type: 'double',
-        price: 180,
-        capacity: 2,
-        amenities: ['WiFi', 'TV', 'AC', 'Ocean View'],
-        isAvailable: true
-      },
-      {
-        _id: '202',
-        roomNumber: '202',
-        type: 'suite',
-        price: 400,
-        capacity: 4,
-        amenities: ['WiFi', 'TV', 'AC', 'Ocean View', 'Balcony'],
-        isAvailable: true
-      }
-    ]
-  },
-  {
-    _id: '3',
-    name: 'Mountain Lodge',
-    location: 'Denver, USA',
-    description: 'Cozy mountain lodge perfect for outdoor enthusiasts.',
-    rating: 4.1,
-    amenities: ['WiFi', 'Fireplace', 'Hiking Trails', 'Restaurant'],
-    rooms: [
-      {
-        _id: '301',
-        roomNumber: '301',
-        type: 'single',
-        price: 120,
-        capacity: 1,
-        amenities: ['WiFi', 'TV', 'Fireplace'],
-        isAvailable: true
-      },
-      {
-        _id: '302',
-        roomNumber: '302',
-        type: 'deluxe',
-        price: 280,
-        capacity: 2,
-        amenities: ['WiFi', 'TV', 'Fireplace', 'Mountain View'],
-        isAvailable: true
-      }
-    ]
-  }
-];
+export let mockHotels: any[] = [];
 
-export let mockBookings = [
-  {
-    _id: 'b1',
-    customerId: '1',
-    customerName: 'Demo User',
-    customerEmail: 'demo@example.com',
-    roomId: {
-      _id: '101',
-      roomNumber: '101',
-      type: 'single',
-      price: 150
-    },
-    hotelId: {
-      _id: '1',
-      name: 'Grand Plaza Hotel',
-      location: 'New York, USA'
-    },
-    checkIn: '2024-01-15',
-    checkOut: '2024-01-18',
-    totalPrice: 450,
-    status: 'approved',
-    guests: 1,
-    specialRequests: 'Late check-in',
-    createdAt: '2024-01-10'
-  },
-  {
-    _id: 'b2',
-    customerId: '1',
-    customerName: 'Demo User',
-    customerEmail: 'demo@example.com',
-    roomId: {
-      _id: '201',
-      roomNumber: '201',
-      type: 'double',
-      price: 180
-    },
-    hotelId: {
-      _id: '2',
-      name: 'Ocean View Resort',
-      location: 'Miami, USA'
-    },
-    checkIn: '2024-02-10',
-    checkOut: '2024-02-14',
-    totalPrice: 720,
-    status: 'pending',
-    guests: 2,
-    createdAt: '2024-02-05'
-  }
-];
+export let mockBookings: any[] = [];
 
 export let mockFavorites: any[] = [];
 
+export const addHotel = (hotel: any) => {
+  mockHotels.push(hotel);
+};
+
+export const getHotelsByManager = (managerId: string) => {
+  return mockHotels.filter(hotel => hotel.managerId === managerId);
+};
+
 export const addBooking = (booking: any) => {
   mockBookings.push(booking);
+};
+
+export const getBookingsByCustomer = (customerId: string) => {
+  return mockBookings.filter(booking => booking.customerId === customerId);
+};
+
+export const getBookingsByManager = (managerId: string) => {
+  const managerHotels = getHotelsByManager(managerId);
+  const hotelIds = managerHotels.map(hotel => hotel._id);
+  return mockBookings.filter(booking => hotelIds.includes(booking.hotelId._id));
 };
 
 export const updateBookingStatus = (bookingId: string, status: string) => {

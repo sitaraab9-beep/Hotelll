@@ -51,14 +51,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           const userData = JSON.parse(savedUserData);
           setUser(userData);
         } else {
-          // Fallback user if no saved data
-          const mockUser = {
-            id: '1',
-            name: 'Demo User',
-            email: 'demo@example.com',
-            role: 'customer' as const
-          };
-          setUser(mockUser);
+          // No saved data, clear token
+          localStorage.removeItem('token');
+          localStorage.removeItem('userData');
         }
       } else {
         localStorage.removeItem('token');
