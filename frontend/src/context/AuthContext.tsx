@@ -75,31 +75,20 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const login = async (email: string, password: string) => {
     // Mock authentication - works immediately
     if (email && password) {
-      // Try to find existing user data
-      const existingUserData = localStorage.getItem('userData');
-      let mockUser;
+      // Try to find existing user in all registered users
+      const allUsers = JSON.parse(localStorage.getItem('allUsers') || '[]');
+      let mockUser = allUsers.find((u: User) => u.email === email);
       
-      if (existingUserData) {
-        const userData = JSON.parse(existingUserData);
-        if (userData.email === email) {
-          mockUser = userData;
-        } else {
-          // Different email, create new user
-          mockUser = {
-            id: Date.now().toString(),
-            name: email.split('@')[0],
-            email: email,
-            role: 'customer' as const
-          };
-        }
-      } else {
-        // No existing user, create new
+      if (!mockUser) {
+        // User not found, create new customer
         mockUser = {
           id: Date.now().toString(),
           name: email.split('@')[0],
           email: email,
           role: 'customer' as const
         };
+        allUsers.push(mockUser);
+        localStorage.setItem('allUsers', JSON.stringify(allUsers));
       }
       
       const mockToken = 'mock-token-' + Date.now();
@@ -123,7 +112,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       };
       const mockToken = 'mock-token-' + Date.now();
       
-      // Save user data to localStorage
+      // Save user to all users list
+      const allUsers = JSON.parse(localStorage.getItem('allUsers') || '[]');
+      allUsers.push(mockUser);
+      localStorage.setItem('allUsers', JSON.stringify(allUsers));
+      
+      // Save current user data
       localStorage.setItem('token', mockToken);
       localStorage.setItem('userData', JSON.stringify(mockUser));
       setUser(mockUser);
