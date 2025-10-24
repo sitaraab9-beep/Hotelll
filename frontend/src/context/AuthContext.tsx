@@ -79,6 +79,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const allUsers = JSON.parse(localStorage.getItem('allUsers') || '[]');
       let mockUser = allUsers.find((u: User) => u.email === email);
       
+      console.log('Login attempt for:', email);
+      console.log('All users:', allUsers);
+      console.log('Found user:', mockUser);
+      
       if (!mockUser) {
         // User not found, create new customer
         mockUser = {
@@ -89,6 +93,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         };
         allUsers.push(mockUser);
         localStorage.setItem('allUsers', JSON.stringify(allUsers));
+        console.log('Created new customer user:', mockUser);
       }
       
       const mockToken = 'mock-token-' + Date.now();
@@ -96,6 +101,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       localStorage.setItem('token', mockToken);
       localStorage.setItem('userData', JSON.stringify(mockUser));
       setUser(mockUser);
+      console.log('Login successful, user set to:', mockUser);
       return;
     }
     throw new Error('Please enter email and password');
@@ -112,10 +118,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       };
       const mockToken = 'mock-token-' + Date.now();
       
+      console.log('Registering user with role:', role, 'Final user:', mockUser);
+      
       // Save user to all users list
       const allUsers = JSON.parse(localStorage.getItem('allUsers') || '[]');
-      allUsers.push(mockUser);
-      localStorage.setItem('allUsers', JSON.stringify(allUsers));
+      // Remove existing user with same email if exists
+      const filteredUsers = allUsers.filter((u: any) => u.email !== email);
+      filteredUsers.push(mockUser);
+      localStorage.setItem('allUsers', JSON.stringify(filteredUsers));
       
       // Save current user data
       localStorage.setItem('token', mockToken);
