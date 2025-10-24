@@ -51,19 +51,34 @@ const Dashboard: React.FC = () => {
     await new Promise(resolve => setTimeout(resolve, 300));
     
     try {
-      const { mockHotels, mockBookings } = await import('../utils/mockData');
-      const allRooms = mockHotels.flatMap((hotel: any) => hotel.rooms || []);
+      const { getHotelsByManager, getRoomsByManager, mockBookings, getBookingsByManager } = await import('../utils/mockData');
       
-      setStats({
-        hotels: mockHotels.length,
-        rooms: allRooms.length,
-        users: 25, // Mock user count
-        bookings: mockBookings.length
-      });
+      if (user?.role === 'manager') {
+        const managerHotels = getHotelsByManager(user.id);
+        const managerRooms = getRoomsByManager(user.id);
+        const managerBookings = getBookingsByManager(user.id);
+        
+        setStats({
+          hotels: managerHotels.length,
+          rooms: managerRooms.length,
+          users: 25, // Mock user count
+          bookings: managerBookings.length
+        });
+      } else {
+        const { mockHotels } = await import('../utils/mockData');
+        const allRooms = mockHotels.flatMap((hotel: any) => hotel.rooms || []);
+        
+        setStats({
+          hotels: mockHotels.length,
+          rooms: allRooms.length,
+          users: 25, // Mock user count
+          bookings: mockBookings.length
+        });
+      }
     } catch (error) {
       console.error('Error fetching stats:', error);
     }
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [user]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchHotelsAndRooms = React.useCallback(async () => {
     if (user?.role !== 'customer' && user?.role !== 'admin') return;
