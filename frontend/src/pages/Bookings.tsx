@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { mockBookings } from '../utils/mockData';
 
 interface Booking {
   _id: string;
@@ -32,7 +31,7 @@ const Bookings: React.FC = () => {
     if (user) {
       fetchBookings();
     }
-  }, [user]);
+  }, [user]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchBookings = async () => {
     if (!user) return;

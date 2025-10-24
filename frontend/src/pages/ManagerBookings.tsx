@@ -11,7 +11,7 @@ const ManagerBookings: React.FC = () => {
     if (user && user.role === 'manager') {
       fetchManagerBookings();
     }
-  }, [user]);
+  }, [user]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchManagerBookings = async () => {
     if (!user) return;
