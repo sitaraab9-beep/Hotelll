@@ -1,71 +1,74 @@
-# HotelEase Vercel Deployment Guide
+# Vercel Deployment Guide
 
-## Prerequisites
-1. Vercel account (https://vercel.com)
-2. MongoDB Atlas account (https://cloud.mongodb.com)
-3. Google Cloud Console project for OAuth
+## 🚀 Deploy to Vercel
 
-## Step 1: Setup MongoDB Atlas
-1. Create a MongoDB Atlas cluster
-2. Get your connection string
-3. Whitelist Vercel IPs (0.0.0.0/0 for simplicity)
+### Option 1: Deploy via GitHub (Recommended)
 
-## Step 2: Deploy Backend
-1. Navigate to backend directory:
+1. **Push to GitHub:**
    ```bash
-   cd backend
+   git add .
+   git commit -m "Prepare for Vercel deployment"
+   git push origin main
    ```
 
-2. Deploy to Vercel:
+2. **Connect to Vercel:**
+   - Go to https://vercel.com
+   - Sign in with GitHub
+   - Click "New Project"
+   - Import your repository
+
+3. **Configure Environment Variables:**
+   In Vercel dashboard, add these environment variables:
+   ```
+   MONGODB_URI=mongodb+srv://savita:savita@cluster0.3zz5dai.mongodb.net/hotelease?retryWrites=true&w=majority&appName=Cluster0
+   JWT_SECRET=hotelease_super_secret_jwt_key_2024_production_ready
+   NODE_ENV=production
+   ```
+
+4. **Deploy:**
+   - Click "Deploy"
+   - Vercel will automatically build and deploy
+
+### Option 2: Deploy via Vercel CLI
+
+1. **Install Vercel CLI:**
    ```bash
-   npx vercel
+   npm i -g vercel
    ```
 
-3. Set environment variables in Vercel dashboard:
-   - `MONGODB_URI`: Your MongoDB Atlas connection string
-   - `JWT_SECRET`: A secure random string
-   - `NODE_ENV`: production
-
-## Step 3: Deploy Frontend
-1. Navigate to frontend directory:
+2. **Login to Vercel:**
    ```bash
-   cd frontend
+   vercel login
    ```
 
-2. Update `.env` with your backend URL:
-   ```
-   REACT_APP_API_URL=https://your-backend-url.vercel.app
-   REACT_APP_GOOGLE_CLIENT_ID=your_google_client_id
-   ```
-
-3. Deploy to Vercel:
+3. **Deploy:**
    ```bash
-   npx vercel
+   vercel --prod
    ```
 
-## Step 4: Configure Google OAuth
-1. Go to Google Cloud Console
-2. Add your Vercel frontend URL to authorized origins
-3. Add your Vercel frontend URL to authorized redirect URIs
+## 🔧 Configuration
 
-## Alternative: Deploy as Monorepo
-Deploy both frontend and backend together:
-```bash
-npx vercel
-```
+- **Frontend:** React app with routing support
+- **Backend:** Node.js API with MongoDB
+- **Database:** MongoDB Atlas (already configured)
+- **Authentication:** JWT with bcrypt
 
-## Environment Variables Needed
+## 🌐 URLs After Deployment
 
-### Backend
-- `MONGODB_URI`
-- `JWT_SECRET`
-- `NODE_ENV`
+- **Frontend:** https://your-project.vercel.app
+- **Backend API:** https://your-project.vercel.app/api
+- **Test Endpoint:** https://your-project.vercel.app/api/test
 
-### Frontend
-- `REACT_APP_API_URL`
-- `REACT_APP_GOOGLE_CLIENT_ID`
+## 🧪 Test Deployment
 
-## Post-Deployment
-1. Test authentication flow
-2. Verify API endpoints work
-3. Check CORS settings if needed
+1. Visit your Vercel URL
+2. Try logging in with:
+   - Email: user@gmail.com
+   - Password: any password
+3. Test registration and role-based features
+
+## 🔍 Troubleshooting
+
+- Check Vercel function logs for errors
+- Verify environment variables are set
+- Ensure MongoDB Atlas allows connections from anywhere (0.0.0.0/0)

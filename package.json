@@ -1,15 +1,14 @@
 {
   "name": "hotelease-fullstack",
   "version": "1.0.0",
-  "description": "HotelEase - Full Stack Hotel Booking Platform",
+  "description": "HotelEase Full-Stack Application",
   "scripts": {
     "build": "cd frontend && npm install && npm run build",
     "start": "cd backend && npm start",
-    "dev:frontend": "cd frontend && npm start",
-    "dev:backend": "cd backend && npm run dev",
-    "install:all": "npm install && cd frontend && npm install && cd ../backend && npm install"
+    "dev": "concurrently \"cd backend && npm run dev\" \"cd frontend && npm start\"",
+    "install-all": "cd backend && npm install && cd ../frontend && npm install"
   },
-  "keywords": ["hotel", "booking", "react", "nodejs", "mongodb"],
-  "author": "",
-  "license": "MIT"
+  "devDependencies": {
+    "concurrently": "^7.6.0"
+  }
 }
