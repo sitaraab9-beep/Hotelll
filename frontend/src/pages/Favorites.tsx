@@ -18,7 +18,7 @@ const Favorites: React.FC = () => {
 
   useEffect(() => {
     fetchFavorites();
-  }, [user]);
+  }, [user]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchFavorites = async () => {
     if (!user) {
