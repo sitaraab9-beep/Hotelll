@@ -1,4 +1,15 @@
-export let mockHotels: any[] = [];
+export let mockHotels: any[] = [
+  {
+    _id: 'hotel1',
+    name: 'Sample Hotel',
+    location: 'New York',
+    description: 'A sample hotel for testing',
+    amenities: ['WiFi', 'Pool'],
+    rating: 4.5,
+    managerId: 'sample',
+    rooms: []
+  }
+];
 
 export let mockBookings: any[] = [];
 
@@ -54,4 +65,55 @@ export const toggleFavorite = (userId: string, hotelId: string, hotelName: strin
     });
     return { isFavorite: true };
   }
+};
+
+export const addRoom = (room: any) => {
+  const hotel = mockHotels.find(h => h._id === room.hotelId);
+  if (hotel) {
+    if (!hotel.rooms) hotel.rooms = [];
+    hotel.rooms.push(room);
+  }
+};
+
+export const updateRoom = (roomId: string, roomData: any) => {
+  for (const hotel of mockHotels) {
+    if (hotel.rooms) {
+      const roomIndex = hotel.rooms.findIndex((r: any) => r._id === roomId);
+      if (roomIndex !== -1) {
+        hotel.rooms[roomIndex] = { ...hotel.rooms[roomIndex], ...roomData };
+        return;
+      }
+    }
+  }
+};
+
+export const deleteRoom = (roomId: string) => {
+  for (const hotel of mockHotels) {
+    if (hotel.rooms) {
+      const roomIndex = hotel.rooms.findIndex((r: any) => r._id === roomId);
+      if (roomIndex !== -1) {
+        hotel.rooms.splice(roomIndex, 1);
+        return;
+      }
+    }
+  }
+};
+
+export const getRoomsByManager = (managerId: string) => {
+  const managerHotels = getHotelsByManager(managerId);
+  const allRooms: any[] = [];
+  
+  managerHotels.forEach(hotel => {
+    if (hotel.rooms) {
+      hotel.rooms.forEach((room: any) => {
+        allRooms.push({
+          ...room,
+          hotelId: hotel._id,
+          hotelName: hotel.name
+        });
+      });
+    }
+  });
+  
+  return allRooms;
 };

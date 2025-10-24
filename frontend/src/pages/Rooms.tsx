@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { mockHotels } from '../utils/mockData';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useAuth } from '../context/AuthContext';
 
 interface Room {
   _id: string;
@@ -15,8 +15,9 @@ interface Room {
 }
 
 const Rooms: React.FC = () => {
+  const { user } = useAuth();
   const [rooms, setRooms] = useState<Room[]>([]);
-  const [hotels] = useState(mockHotels);
+  const [hotels, setHotels] = useState<any[]>([]);
   const [showModal, setShowModal] = useState(false);
   const [editingRoom, setEditingRoom] = useState<Room | null>(null);
   const [formData, setFormData] = useState({
@@ -29,50 +30,65 @@ const Rooms: React.FC = () => {
     imageUrl: ''
   });
 
-  useEffect(() => {
-    // Load rooms from mock hotels
-    const allRooms = mockHotels.flatMap((hotel: any) => 
-      hotel.rooms.map((room: any) => ({
-        ...room,
-        hotelId: hotel._id,
-        hotelName: hotel.name
-      }))
-    );
-    setRooms(allRooms);
-  }, []);
+  const fetchRooms = useCallback(async () => {
+    if (!user) return;
+    
+    try {
+      const { getRoomsByManager, getHotelsByManager } = await import('../utils/mockData');
+      
+      if (user.role === 'manager') {
+        const managerRooms = getRoomsByManager(user.id);
+        const managerHotels = getHotelsByManager(user.id);
+        setRooms(managerRooms);
+        setHotels(managerHotels);
+      }
+    } catch (error) {
+      console.error('Error fetching rooms:', error);
+    }
+  }, [user]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  useEffect(() => {
+    fetchRooms();
+  }, [fetchRooms]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!user) return;
     
     const hotel = hotels.find(h => h._id === formData.hotelId);
     const roomData = {
       ...formData,
       price: parseFloat(formData.price),
       capacity: parseInt(formData.capacity),
-      amenities: formData.amenities.split(',').map(a => a.trim()).filter(a => a),
+      amenities: formData.amenities.split(',').map((a: string) => a.trim()).filter((a: string) => a),
       isAvailable: true,
       hotelName: hotel?.name || ''
     };
 
-    if (editingRoom) {
-      // Update room
-      setRooms(prev => prev.map(r => 
-        r._id === editingRoom._id 
-          ? { ...r, ...roomData }
-          : r
-      ));
-    } else {
-      // Add new room
-      const newRoom = {
-        _id: Date.now().toString(),
-        ...roomData
-      };
-      setRooms(prev => [...prev, newRoom]);
+    try {
+      if (editingRoom) {
+        const { updateRoom } = await import('../utils/mockData');
+        updateRoom(editingRoom._id, roomData);
+        alert('Room updated successfully!');
+      } else {
+        const { addRoom } = await import('../utils/mockData');
+        const newRoom = {
+          _id: Date.now().toString(),
+          ...roomData
+        };
+        addRoom(newRoom);
+        alert('Room added successfully!');
+      }
+      
+      fetchRooms();
+      setShowModal(false);
+      setEditingRoom(null);
+      setFormData({ hotelId: '', roomNumber: '', type: 'single', price: '', capacity: '1', amenities: '', imageUrl: '' });
+    } catch (error) {
+      console.error('Error saving room:', error);
+      alert('Error saving room');
     }
-
-    setShowModal(false);
-    setEditingRoom(null);
-    setFormData({ hotelId: '', roomNumber: '', type: 'single', price: '', capacity: '1', amenities: '', imageUrl: '' });
   };
 
   const handleEdit = (room: Room) => {
@@ -89,18 +105,31 @@ const Rooms: React.FC = () => {
     setShowModal(true);
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     if (window.confirm('Are you sure you want to delete this room?')) {
-      setRooms(prev => prev.filter(r => r._id !== id));
+      try {
+        const { deleteRoom } = await import('../utils/mockData');
+        deleteRoom(id);
+        fetchRooms();
+        alert('Room deleted successfully!');
+      } catch (error) {
+        console.error('Error deleting room:', error);
+        alert('Error deleting room');
+      }
     }
   };
 
-  const toggleAvailability = (id: string) => {
-    setRooms(prev => prev.map(r => 
-      r._id === id 
-        ? { ...r, isAvailable: !r.isAvailable }
-        : r
-    ));
+  const toggleAvailability = async (id: string) => {
+    try {
+      const room = rooms.find(r => r._id === id);
+      if (room) {
+        const { updateRoom } = await import('../utils/mockData');
+        updateRoom(id, { isAvailable: !room.isAvailable });
+        fetchRooms();
+      }
+    } catch (error) {
+      console.error('Error updating room availability:', error);
+    }
   };
 
   const openAddModal = () => {
