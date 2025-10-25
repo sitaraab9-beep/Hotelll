@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 
 
 const Login: React.FC = () => {
+  const [activeTab, setActiveTab] = useState<'user' | 'admin'>('user');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -17,8 +18,31 @@ const Login: React.FC = () => {
     setLoading(true);
 
     try {
-      await login(email, password);
-      navigate('/dashboard');
+      if (activeTab === 'admin') {
+        // Hardcoded admin credentials
+        if (email === 'admin@hotelease.com' && password === 'admin123') {
+          const adminUser = {
+            id: 'admin-001',
+            name: 'System Administrator',
+            email: 'admin@hotelease.com',
+            role: 'admin' as const
+          };
+          
+          // Store admin data in the same format as regular users
+          const mockToken = 'admin-token-' + Date.now();
+          localStorage.setItem('token', mockToken);
+          localStorage.setItem('userData', JSON.stringify(adminUser));
+          
+          // Force page reload to trigger auth context
+          window.location.href = '/dashboard';
+          return;
+        } else {
+          throw new Error('Invalid admin credentials');
+        }
+      } else {
+        await login(email, password);
+        navigate('/dashboard');
+      }
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -72,7 +96,43 @@ const Login: React.FC = () => {
             Sign in to your account
           </h2>
         </div>
-        <form className="mt-8 space-y-6 bg-white p-8 rounded-xl shadow-lg" onSubmit={handleSubmit}>
+        <div className="mt-8 bg-white p-8 rounded-xl shadow-lg">
+          {/* Tab Navigation */}
+          <div className="flex mb-6 bg-gray-100 rounded-lg p-1">
+            <button
+              type="button"
+              onClick={() => setActiveTab('user')}
+              className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
+                activeTab === 'user'
+                  ? 'bg-white text-blue-600 shadow-sm'
+                  : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              User Login
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab('admin')}
+              className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
+                activeTab === 'admin'
+                  ? 'bg-white text-red-600 shadow-sm'
+                  : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              Admin Login
+            </button>
+          </div>
+
+          {/* Admin Credentials Display */}
+          {activeTab === 'admin' && (
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
+              <p className="text-sm text-red-800 font-medium mb-1">Admin Credentials:</p>
+              <p className="text-xs text-red-600">Email: admin@hotelease.com</p>
+              <p className="text-xs text-red-600">Password: admin123</p>
+            </div>
+          )}
+
+          <form className="space-y-6" onSubmit={handleSubmit}>
           {error && (
             <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-md">
               {error}
@@ -173,15 +233,18 @@ const Login: React.FC = () => {
             </div>
           </div>
           
-          <div className="mt-6 text-center">
-            <p className="text-sm text-gray-600">
-              Don't have an account?{' '}
-              <Link to="/register" className="font-medium text-blue-600 hover:text-blue-500">
-                Create one
-              </Link>
-            </p>
-          </div>
-        </form>
+          {activeTab === 'user' && (
+            <div className="mt-6 text-center">
+              <p className="text-sm text-gray-600">
+                Don't have an account?{' '}
+                <Link to="/register" className="font-medium text-blue-600 hover:text-blue-500">
+                  Create one
+                </Link>
+              </p>
+            </div>
+          )}
+          </form>
+        </div>
       </div>
     </div>
   );

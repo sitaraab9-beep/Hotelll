@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import SearchFilters from '../components/SearchFilters';
 import HotelCard from '../components/HotelCard';
-import { mockHotels } from '../utils/mockData';
+
 
 interface Hotel {
   _id: string;
@@ -21,44 +21,26 @@ const HotelSearch: React.FC = () => {
     setLoading(true);
     setError('');
     
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 500));
-    
     try {
-      let filteredHotels = [...mockHotels];
-      
-      // Apply filters
-      if (filters.search) {
-        filteredHotels = filteredHotels.filter(hotel => 
-          hotel.name.toLowerCase().includes(filters.search.toLowerCase())
-        );
+      const response = await fetch('/api/hotels');
+      if (response.ok) {
+        let allHotels = await response.json();
+        
+        // Apply filters
+        if (filters.search) {
+          allHotels = allHotels.filter((hotel: any) => 
+            hotel.name.toLowerCase().includes(filters.search.toLowerCase())
+          );
+        }
+        
+        if (filters.location) {
+          allHotels = allHotels.filter((hotel: any) => 
+            hotel.location.toLowerCase().includes(filters.location.toLowerCase())
+          );
+        }
+        
+        setHotels(allHotels);
       }
-      
-      if (filters.location) {
-        filteredHotels = filteredHotels.filter(hotel => 
-          hotel.location.toLowerCase().includes(filters.location.toLowerCase())
-        );
-      }
-      
-      if (filters.minPrice || filters.maxPrice) {
-        filteredHotels = filteredHotels.filter(hotel => {
-          const minRoomPrice = Math.min(...hotel.rooms.map((room: any) => room.price));
-          const maxRoomPrice = Math.max(...hotel.rooms.map((room: any) => room.price));
-          
-          if (filters.minPrice && minRoomPrice < parseInt(filters.minPrice)) return false;
-          if (filters.maxPrice && maxRoomPrice > parseInt(filters.maxPrice)) return false;
-          
-          return true;
-        });
-      }
-      
-      if (filters.roomType) {
-        filteredHotels = filteredHotels.filter(hotel => 
-          hotel.rooms.some((room: any) => room.type === filters.roomType)
-        );
-      }
-      
-      setHotels(filteredHotels);
     } catch (err) {
       setError('Error fetching hotels');
     } finally {

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { mockHotels } from '../utils/mockData';
+
 
 interface Room {
   _id: string;
@@ -42,13 +42,16 @@ const HotelDetails: React.FC = () => {
   }, [id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchHotel = async () => {
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 300));
-    
     try {
-      const foundHotel = mockHotels.find(hotel => hotel._id === id);
-      if (foundHotel) {
-        setHotel(foundHotel);
+      const response = await fetch(`/api/hotels`);
+      if (response.ok) {
+        const hotels = await response.json();
+        const foundHotel = hotels.find((hotel: any) => hotel._id === id);
+        if (foundHotel) {
+          setHotel(foundHotel);
+        } else {
+          setError('Hotel not found');
+        }
       } else {
         setError('Hotel not found');
       }

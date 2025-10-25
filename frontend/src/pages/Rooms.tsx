@@ -34,13 +34,31 @@ const Rooms: React.FC = () => {
     if (!user) return;
     
     try {
-      const { getRoomsByManager, getHotelsByManager } = await import('../utils/mockData');
+      const token = localStorage.getItem('token');
+      if (!token) return;
+
+      // Fetch hotels first
+      const hotelsResponse = await fetch('/api/hotels', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
       
-      if (user.role === 'manager') {
-        const managerRooms = getRoomsByManager(user.id);
-        const managerHotels = getHotelsByManager(user.id);
-        setRooms(managerRooms);
-        setHotels(managerHotels);
+      if (hotelsResponse.ok) {
+        const hotelsData = await hotelsResponse.json();
+        setHotels(hotelsData);
+      }
+
+      // Fetch rooms
+      const roomsResponse = await fetch('/api/rooms', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (roomsResponse.ok) {
+        const roomsData = await roomsResponse.json();
+        setRooms(roomsData);
       }
     } catch (error) {
       console.error('Error fetching rooms:', error);
@@ -67,18 +85,39 @@ const Rooms: React.FC = () => {
     };
 
     try {
+      const token = localStorage.getItem('token');
+      if (!token) return;
+
       if (editingRoom) {
-        const { updateRoom } = await import('../utils/mockData');
-        updateRoom(editingRoom._id, roomData);
-        alert('Room updated successfully!');
+        const response = await fetch(`/api/rooms/${editingRoom._id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify(roomData)
+        });
+        
+        if (response.ok) {
+          alert('Room updated successfully!');
+        } else {
+          throw new Error('Failed to update room');
+        }
       } else {
-        const { addRoom } = await import('../utils/mockData');
-        const newRoom = {
-          _id: Date.now().toString(),
-          ...roomData
-        };
-        addRoom(newRoom);
-        alert('Room added successfully!');
+        const response = await fetch('/api/rooms', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify(roomData)
+        });
+        
+        if (response.ok) {
+          alert('Room added successfully!');
+        } else {
+          throw new Error('Failed to add room');
+        }
       }
       
       fetchRooms();
@@ -108,10 +147,22 @@ const Rooms: React.FC = () => {
   const handleDelete = async (id: string) => {
     if (window.confirm('Are you sure you want to delete this room?')) {
       try {
-        const { deleteRoom } = await import('../utils/mockData');
-        deleteRoom(id);
-        fetchRooms();
-        alert('Room deleted successfully!');
+        const token = localStorage.getItem('token');
+        if (!token) return;
+
+        const response = await fetch(`/api/rooms/${id}`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        
+        if (response.ok) {
+          fetchRooms();
+          alert('Room deleted successfully!');
+        } else {
+          throw new Error('Failed to delete room');
+        }
       } catch (error) {
         console.error('Error deleting room:', error);
         alert('Error deleting room');
@@ -123,9 +174,21 @@ const Rooms: React.FC = () => {
     try {
       const room = rooms.find(r => r._id === id);
       if (room) {
-        const { updateRoom } = await import('../utils/mockData');
-        updateRoom(id, { isAvailable: !room.isAvailable });
-        fetchRooms();
+        const token = localStorage.getItem('token');
+        if (!token) return;
+
+        const response = await fetch(`/api/rooms/${id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ isAvailable: !room.isAvailable })
+        });
+        
+        if (response.ok) {
+          fetchRooms();
+        }
       }
     } catch (error) {
       console.error('Error updating room availability:', error);

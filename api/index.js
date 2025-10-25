@@ -31,6 +31,7 @@ const hotelSchema = new mongoose.Schema({
   rating: { type: Number, default: 4.0 },
   imageUrl: String,
   managerId: { type: String, required: true },
+  isDeleted: { type: Boolean, default: false },
   rooms: [{
     _id: String,
     roomNumber: String,
@@ -44,6 +45,44 @@ const hotelSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 const Hotel = mongoose.models.Hotel || mongoose.model('Hotel', hotelSchema);
+
+// Room Schema
+const roomSchema = new mongoose.Schema({
+  hotelId: { type: String, required: true },
+  hotelName: { type: String, required: true },
+  roomNumber: { type: String, required: true },
+  type: { type: String, required: true },
+  price: { type: Number, required: true },
+  capacity: { type: Number, required: true },
+  amenities: [String],
+  isAvailable: { type: Boolean, default: true },
+  imageUrl: String,
+  managerId: { type: String, required: true },
+  isDeleted: { type: Boolean, default: false }
+}, { timestamps: true });
+
+const Room = mongoose.models.Room || mongoose.model('Room', roomSchema);
+
+// Booking Schema
+const bookingSchema = new mongoose.Schema({
+  customerId: { type: String, required: true },
+  customerName: { type: String, required: true },
+  customerEmail: { type: String, required: true },
+  roomId: { type: String, required: true },
+  hotelId: { type: String, required: true },
+  hotelName: { type: String, required: true },
+  roomNumber: { type: String, required: true },
+  roomType: { type: String, required: true },
+  roomPrice: { type: Number, required: true },
+  checkIn: { type: String, required: true },
+  checkOut: { type: String, required: true },
+  totalPrice: { type: Number, required: true },
+  status: { type: String, enum: ['pending', 'confirmed', 'cancelled'], default: 'pending' },
+  guests: { type: Number, required: true },
+  specialRequests: String
+}, { timestamps: true });
+
+const Booking = mongoose.models.Booking || mongoose.model('Booking', bookingSchema);
 
 // Connect to MongoDB
 if (!mongoose.connection.readyState) {
@@ -123,15 +162,44 @@ export default async function handler(req, res) {
     }
 
     // Hotel Management Routes
-    if (method === 'GET' && path.startsWith('/hotels')) {
+    if (method === 'GET' && path === '/hotels') {
+      const token = req.headers.authorization?.replace('Bearer ', '');
+      
+      if (!token) {
+        // Allow unauthenticated access to view active hotels only
+        const hotels = await Hotel.find({ isDeleted: false });
+        return res.json(hotels);
+      }
+
+      // Check if it's an admin token
+      if (token.startsWith('admin-token-')) {
+        // Admin sees all hotels including deleted
+        const hotels = await Hotel.find({});
+        return res.json(hotels);
+      }
+      
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      const user = await User.findById(decoded.id);
+      
+      // Managers see only their active hotels, customers see active hotels
+      let hotels;
+      if (user.role === 'manager') {
+        hotels = await Hotel.find({ managerId: decoded.id, isDeleted: false });
+      } else {
+        hotels = await Hotel.find({ isDeleted: false }); // Customers see only active
+      }
+      return res.json(hotels);
+    }
+
+    if (method === 'GET' && path === '/hotels/all') {
       const token = req.headers.authorization?.replace('Bearer ', '');
       if (!token) {
         return res.status(401).json({ message: 'No token provided' });
       }
 
-      const decoded = jwt.verify(token, process.env.JWT_SECRET);
-      const hotels = await Hotel.find({ managerId: decoded.id });
-      return res.json({ success: true, hotels });
+      // Return all hotels for customers/admins
+      const hotels = await Hotel.find({});
+      return res.json(hotels);
     }
 
     if (method === 'POST' && path === '/hotels') {
@@ -153,6 +221,17 @@ export default async function handler(req, res) {
         return res.status(401).json({ message: 'No token provided' });
       }
 
+      // Check if it's an admin token
+      if (token.startsWith('admin-token-')) {
+        // Admin can edit any hotel
+        const hotel = await Hotel.findByIdAndUpdate(
+          hotelId,
+          req.body,
+          { new: true }
+        );
+        return res.json({ success: true, hotel });
+      }
+
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
       const hotel = await Hotel.findOneAndUpdate(
         { _id: hotelId, managerId: decoded.id },
@@ -169,9 +248,202 @@ export default async function handler(req, res) {
         return res.status(401).json({ message: 'No token provided' });
       }
 
+      // Check if it's an admin token
+      if (token.startsWith('admin-token-')) {
+        // Admin can delete any hotel
+        const hotel = await Hotel.findByIdAndUpdate(
+          hotelId,
+          { isDeleted: true },
+          { new: true }
+        );
+        await Room.updateMany({ hotelId }, { isDeleted: true });
+        return res.json({ success: true, message: 'Hotel deleted' });
+      }
+      
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
-      await Hotel.findOneAndDelete({ _id: hotelId, managerId: decoded.id });
+      const user = await User.findById(decoded.id);
+      
+      // Soft delete hotel
+      const hotel = await Hotel.findOneAndUpdate(
+        { _id: hotelId, managerId: decoded.id },
+        { isDeleted: true },
+        { new: true }
+      );
+      
+      // Also soft delete associated rooms
+      await Room.updateMany({ hotelId }, { isDeleted: true });
+      
       return res.json({ success: true, message: 'Hotel deleted' });
+    }
+
+    if (method === 'POST' && path.startsWith('/hotels/') && path.endsWith('/restore')) {
+      const hotelId = path.split('/')[2];
+      const token = req.headers.authorization?.replace('Bearer ', '');
+      if (!token) {
+        return res.status(401).json({ message: 'No token provided' });
+      }
+
+      // Check if it's an admin token
+      if (!token.startsWith('admin-token-')) {
+        return res.status(403).json({ message: 'Only admin can restore hotels' });
+      }
+      
+      // Restore hotel
+      await Hotel.findByIdAndUpdate(hotelId, { isDeleted: false });
+      await Room.updateMany({ hotelId }, { isDeleted: false });
+      
+      return res.json({ success: true, message: 'Hotel restored' });
+    }
+
+    // Room Management Routes
+    if (method === 'GET' && path === '/rooms') {
+      const token = req.headers.authorization?.replace('Bearer ', '');
+      
+      if (!token) {
+        // Allow unauthenticated access to view active rooms only
+        const rooms = await Room.find({ isDeleted: false });
+        return res.json(rooms);
+      }
+
+      // Check if it's an admin token
+      if (token.startsWith('admin-token-')) {
+        // Admin sees all rooms including deleted
+        const rooms = await Room.find({});
+        return res.json(rooms);
+      }
+
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      const user = await User.findById(decoded.id);
+      
+      // Managers see only their active rooms, customers see active rooms
+      const rooms = user.role === 'manager' 
+        ? await Room.find({ managerId: decoded.id, isDeleted: false })
+        : await Room.find({ isDeleted: false });
+      return res.json(rooms);
+    }
+
+    if (method === 'POST' && path === '/rooms') {
+      const token = req.headers.authorization?.replace('Bearer ', '');
+      if (!token) {
+        return res.status(401).json({ message: 'No token provided' });
+      }
+
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      const roomData = { ...req.body, managerId: decoded.id };
+      const room = await Room.create(roomData);
+      return res.status(201).json(room);
+    }
+
+    if (method === 'PUT' && path.startsWith('/rooms/')) {
+      const roomId = path.split('/')[2];
+      const token = req.headers.authorization?.replace('Bearer ', '');
+      if (!token) {
+        return res.status(401).json({ message: 'No token provided' });
+      }
+
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      const room = await Room.findOneAndUpdate(
+        { _id: roomId, managerId: decoded.id },
+        req.body,
+        { new: true }
+      );
+      return res.json(room);
+    }
+
+    if (method === 'DELETE' && path.startsWith('/rooms/')) {
+      const roomId = path.split('/')[2];
+      const token = req.headers.authorization?.replace('Bearer ', '');
+      if (!token) {
+        return res.status(401).json({ message: 'No token provided' });
+      }
+
+      // Check if it's an admin token
+      if (token.startsWith('admin-token-')) {
+        // Admin can delete any room
+        await Room.findByIdAndUpdate(roomId, { isDeleted: true });
+        return res.json({ success: true, message: 'Room deleted' });
+      }
+
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      await Room.findOneAndUpdate(
+        { _id: roomId, managerId: decoded.id },
+        { isDeleted: true }
+      );
+      return res.json({ success: true, message: 'Room deleted' });
+    }
+
+    if (method === 'POST' && path.startsWith('/rooms/') && path.endsWith('/restore')) {
+      const roomId = path.split('/')[2];
+      const token = req.headers.authorization?.replace('Bearer ', '');
+      if (!token) {
+        return res.status(401).json({ message: 'No token provided' });
+      }
+
+      // Check if it's an admin token
+      if (!token.startsWith('admin-token-')) {
+        return res.status(403).json({ message: 'Only admin can restore rooms' });
+      }
+      
+      // Restore room
+      await Room.findByIdAndUpdate(roomId, { isDeleted: false });
+      return res.json({ success: true, message: 'Room restored' });
+    }
+
+    // Booking Management Routes
+    if (method === 'GET' && path === '/bookings') {
+      const token = req.headers.authorization?.replace('Bearer ', '');
+      
+      if (!token) {
+        // Allow unauthenticated access to view all bookings (for admin)
+        const bookings = await Booking.find({});
+        return res.json(bookings);
+      }
+
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      const user = await User.findById(decoded.id);
+      
+      let bookings;
+      if (user.role === 'customer') {
+        bookings = await Booking.find({ customerId: decoded.id });
+      } else if (user.role === 'manager') {
+        // Get bookings for manager's hotels
+        const managerHotels = await Hotel.find({ managerId: decoded.id });
+        const hotelIds = managerHotels.map(h => h._id.toString());
+        bookings = await Booking.find({ hotelId: { $in: hotelIds } });
+      } else {
+        bookings = await Booking.find({});
+      }
+      return res.json(bookings);
+    }
+
+    if (method === 'POST' && path === '/bookings') {
+      const token = req.headers.authorization?.replace('Bearer ', '');
+      if (!token) {
+        return res.status(401).json({ message: 'No token provided' });
+      }
+
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      const bookingData = { ...req.body, customerId: decoded.id };
+      const booking = await Booking.create(bookingData);
+      return res.status(201).json(booking);
+    }
+
+    if (method === 'PUT' && path.startsWith('/bookings/')) {
+      const bookingId = path.split('/')[2];
+      const token = req.headers.authorization?.replace('Bearer ', '');
+      if (!token) {
+        return res.status(401).json({ message: 'No token provided' });
+      }
+
+      const booking = await Booking.findByIdAndUpdate(bookingId, req.body, { new: true });
+      return res.json(booking);
+    }
+
+    // Users Management Route
+    if (method === 'GET' && path === '/users') {
+      // Return all users for admin
+      const users = await User.find({}).select('-password');
+      return res.json(users);
     }
 
     if (method === 'GET' && path === '/test') {

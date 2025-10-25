@@ -44,6 +44,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const fetchProfile = async (token: string) => {
     try {
+      // Check if it's an admin token
+      if (token.startsWith('admin-token-')) {
+        const userData = localStorage.getItem('userData');
+        if (userData) {
+          setUser(JSON.parse(userData));
+        }
+        setLoading(false);
+        return;
+      }
+      
       const response = await fetch('/api/auth/profile', {
         headers: {
           'Authorization': `Bearer ${token}`

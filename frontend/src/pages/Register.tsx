@@ -164,6 +164,7 @@ const Register: React.FC = () => {
                 <option value="customer">Customer - Book hotels</option>
                 <option value="manager">Manager - Manage hotels</option>
               </select>
+              <p className="mt-1 text-xs text-gray-500">Admin accounts are managed separately</p>
             </div>
           </div>
 

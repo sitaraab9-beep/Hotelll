@@ -2,6 +2,7 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { SidebarProvider } from './context/SidebarContext';
+import { FavoritesProvider } from './context/FavoritesContext';
 import Navbar from './components/Navbar';
 import Sidebar from './components/Sidebar';
 import Home from './pages/Home';
@@ -27,7 +28,8 @@ import ProtectedRoute from './components/ProtectedRoute';
 function App() {
   return (
     <AuthProvider>
-      <SidebarProvider>
+      <FavoritesProvider>
+        <SidebarProvider>
         <Router>
           <div className="min-h-screen bg-gray-50">
             <Navbar />
@@ -162,7 +164,8 @@ function App() {
             </Routes>
           </div>
         </Router>
-      </SidebarProvider>
+        </SidebarProvider>
+      </FavoritesProvider>
     </AuthProvider>
   );
 }

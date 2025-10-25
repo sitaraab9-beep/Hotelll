@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { updateBookingStatus } from '../utils/mockData';
+
 
 const ManagerBookings: React.FC = () => {
   const { user } = useAuth();
@@ -17,25 +17,63 @@ const ManagerBookings: React.FC = () => {
     if (!user) return;
     
     try {
-      const { getBookingsByManager } = await import('../utils/mockData');
-      const managerBookings = getBookingsByManager(user.id);
-      setBookings(managerBookings);
+      const token = localStorage.getItem('token');
+      const response = await fetch('/api/bookings', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setBookings(data);
+      }
     } catch (error) {
       console.error('Error fetching manager bookings:', error);
     }
   };
 
-  const handleApprove = (bookingId: string) => {
-    updateBookingStatus(bookingId, 'approved');
-    fetchManagerBookings();
-    alert('✅ Booking approved! Customer has been notified and can now download their ticket.');
+  const handleApprove = async (bookingId: string) => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`/api/bookings/${bookingId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ status: 'confirmed' })
+      });
+      
+      if (response.ok) {
+        fetchManagerBookings();
+        alert('✅ Booking approved! Customer has been notified and can now download their ticket.');
+      }
+    } catch (error) {
+      console.error('Error approving booking:', error);
+    }
   };
 
-  const handleReject = (bookingId: string) => {
+  const handleReject = async (bookingId: string) => {
     if (window.confirm('Are you sure you want to reject this booking?')) {
-      updateBookingStatus(bookingId, 'cancelled');
-      fetchManagerBookings();
-      alert('❌ Booking rejected. Customer has been notified.');
+      try {
+        const token = localStorage.getItem('token');
+        const response = await fetch(`/api/bookings/${bookingId}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ status: 'cancelled' })
+        });
+        
+        if (response.ok) {
+          fetchManagerBookings();
+          alert('❌ Booking rejected. Customer has been notified.');
+        }
+      } catch (error) {
+        console.error('Error rejecting booking:', error);
+      }
     }
   };
 
@@ -50,7 +88,7 @@ const ManagerBookings: React.FC = () => {
 
   const filteredBookings = bookings.filter(booking => {
     if (filter === 'pending') return booking.status === 'pending';
-    if (filter === 'approved') return booking.status === 'approved';
+    if (filter === 'confirmed') return booking.status === 'confirmed';
     if (filter === 'cancelled') return booking.status === 'cancelled';
     return true;
   });
@@ -74,10 +112,10 @@ const ManagerBookings: React.FC = () => {
               Pending ({bookings.filter(b => b.status === 'pending').length})
             </button>
             <button
-              onClick={() => setFilter('approved')}
-              className={`px-4 py-2 rounded ${filter === 'approved' ? 'bg-green-600 text-white' : 'bg-white text-gray-700'}`}
+              onClick={() => setFilter('confirmed')}
+              className={`px-4 py-2 rounded ${filter === 'confirmed' ? 'bg-green-600 text-white' : 'bg-white text-gray-700'}`}
             >
-              Approved ({bookings.filter(b => b.status === 'approved').length})
+              Confirmed ({bookings.filter(b => b.status === 'confirmed').length})
             </button>
           </div>
         </div>
@@ -93,8 +131,8 @@ const ManagerBookings: React.FC = () => {
                 <div className="p-6">
                   <div className="flex justify-between items-start mb-4">
                     <div>
-                      <h3 className="text-xl font-semibold mb-1">{booking.hotelId.name}</h3>
-                      <p className="text-gray-600">📍 {booking.hotelId.location}</p>
+                      <h3 className="text-xl font-semibold mb-1">{booking.hotelName}</h3>
+                      <p className="text-gray-600">📍 Hotel Location</p>
                       <p className="text-sm text-gray-500 mt-1">Booking ID: {booking._id}</p>
                     </div>
                     <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(booking.status)}`}>
@@ -110,7 +148,7 @@ const ManagerBookings: React.FC = () => {
                     </div>
                     <div>
                       <p className="text-sm text-gray-500">Room</p>
-                      <p className="font-medium">{booking.roomId.type} - {booking.roomId.roomNumber}</p>
+                      <p className="font-medium">{booking.roomType} - {booking.roomNumber}</p>
                     </div>
                     <div>
                       <p className="text-sm text-gray-500">Dates</p>
@@ -152,9 +190,9 @@ const ManagerBookings: React.FC = () => {
                       </div>
                     )}
                     
-                    {booking.status === 'approved' && (
+                    {booking.status === 'confirmed' && (
                       <div className="text-green-600 font-medium">
-                        ✅ Approved on {new Date().toLocaleDateString()}
+                        ✅ Confirmed on {new Date().toLocaleDateString()}
                       </div>
                     )}
                   </div>

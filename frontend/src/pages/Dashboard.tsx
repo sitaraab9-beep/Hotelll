@@ -18,6 +18,7 @@ interface Room {
   price: number;
   availability: boolean;
   hotelId: string;
+  hotelName: string;
   roomNumber: string;
   capacity: number;
   amenities: string[];
@@ -35,6 +36,8 @@ const Dashboard: React.FC = () => {
   });
   const [hotels, setHotels] = useState<Hotel[]>([]);
   const [rooms, setRooms] = useState<Room[]>([]);
+  const [users, setUsers] = useState<any[]>([]);
+  const [bookings, setBookings] = useState<any[]>([]);
   const [favorites, setFavorites] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [showBookingModal, setShowBookingModal] = useState(false);
@@ -47,74 +50,101 @@ const Dashboard: React.FC = () => {
   });
 
   const fetchStats = React.useCallback(async () => {
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 300));
+    if (!user) return;
     
     try {
-      const { getHotelsByManager, getRoomsByManager, mockBookings, getBookingsByManager } = await import('../utils/mockData');
+      const token = localStorage.getItem('token');
+      if (!token) return;
+
+      // Fetch hotels
+      const hotelsResponse = await fetch('/api/hotels', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const hotelsData = hotelsResponse.ok ? await hotelsResponse.json() : [];
+
+      // Fetch rooms
+      const roomsResponse = await fetch('/api/rooms', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const roomsData = roomsResponse.ok ? await roomsResponse.json() : [];
+
+      // Fetch bookings for admin
+      let bookingsData = [];
+      let usersData = [];
       
-      if (user?.role === 'manager') {
-        const managerHotels = getHotelsByManager(user.id);
-        const managerRooms = getRoomsByManager(user.id);
-        const managerBookings = getBookingsByManager(user.id);
-        
-        setStats({
-          hotels: managerHotels.length,
-          rooms: managerRooms.length,
-          users: 25, // Mock user count
-          bookings: managerBookings.length
-        });
-      } else {
-        const { mockHotels } = await import('../utils/mockData');
-        const allRooms = mockHotels.flatMap((hotel: any) => hotel.rooms || []);
-        
-        setStats({
-          hotels: mockHotels.length,
-          rooms: allRooms.length,
-          users: 25, // Mock user count
-          bookings: mockBookings.length
-        });
+      if (user.role === 'admin') {
+        try {
+          const bookingsResponse = await fetch('/api/bookings');
+          if (bookingsResponse.ok) {
+            bookingsData = await bookingsResponse.json();
+          }
+        } catch (error) {
+          console.log('Bookings not available');
+        }
       }
+
+      setStats({
+        hotels: hotelsData.length,
+        rooms: roomsData.length,
+        users: usersData.length || 1, // At least admin user
+        bookings: bookingsData.length
+      });
+      
+      setBookings(bookingsData);
     } catch (error) {
       console.error('Error fetching stats:', error);
     }
-  }, [user]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [user]);
 
   const fetchHotelsAndRooms = React.useCallback(async () => {
-    if (user?.role !== 'customer' && user?.role !== 'admin') return;
+    if (!user || (user.role !== 'customer' && user.role !== 'admin')) return;
     
     setLoading(true);
     
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 500));
-    
     try {
-      const { mockHotels, getFavorites } = await import('../utils/mockData');
+      const token = localStorage.getItem('token');
+      if (!token) return;
+
+      // For customers and admins, fetch all hotels
+      const hotelsResponse = await fetch('/api/hotels');
+      const hotelsData = hotelsResponse.ok ? await hotelsResponse.json() : [];
       
-      // Set mock hotels with proper interface
-      const mappedHotels = mockHotels.map((hotel: any) => ({
+      const mappedHotels = hotelsData.map((hotel: any) => ({
         ...hotel,
-        images: [],
-        totalRooms: hotel.rooms ? hotel.rooms.length : 0
+        images: hotel.imageUrl ? [hotel.imageUrl] : [],
+        totalRooms: 0 // Will be calculated from rooms
       }));
       setHotels(mappedHotels);
       
-      // Flatten all rooms from hotels
-      const allRooms = mockHotels.flatMap((hotel: any) => 
-        (hotel.rooms || []).map((room: any) => ({
-          ...room,
-          hotelId: hotel._id,
-          availability: room.isAvailable,
-          images: [],
-          description: `${room.type} room in ${hotel.name}`
-        }))
-      );
-      setRooms(allRooms);
+      // For admin, fetch all rooms without auth (since admin tokens don't work with API)
+      const roomsResponse = user.role === 'admin' 
+        ? await fetch('/api/rooms')
+        : await fetch('/api/rooms', {
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+      const roomsData = roomsResponse.ok ? await roomsResponse.json() : [];
       
-      // Load favorites
-      if (user?.role === 'customer') {
-        const userFavorites = getFavorites(user.id);
-        setFavorites(userFavorites.map((fav: any) => fav.hotelId));
+      const mappedRooms = roomsData.map((room: any) => ({
+        ...room,
+        availability: room.isAvailable,
+        images: room.imageUrl ? [room.imageUrl] : [],
+        description: `${room.type} room in ${room.hotelName}`
+      }));
+      setRooms(mappedRooms);
+      
+      // Mock favorites for now
+      setFavorites([]);
+      
+      // Set users data for admin
+      if (user.role === 'admin') {
+        const adminUser = {
+          id: 'admin-001',
+          name: 'System Administrator',
+          email: 'admin@hotelease.com',
+          role: 'admin',
+          createdAt: new Date().toISOString()
+        };
+        setUsers([adminUser]);
       }
     } catch (error) {
       console.error('Error fetching hotels and rooms:', error);
@@ -140,9 +170,8 @@ const Dashboard: React.FC = () => {
     if (!user) return;
     
     try {
-      const { addBooking, mockHotels } = await import('../utils/mockData');
-      const hotel = mockHotels.find((h: any) => h._id === selectedHotel);
-      const room = hotel?.rooms?.find((r: any) => r._id === selectedRoom);
+      const hotel = hotels.find(h => h._id === selectedHotel);
+      const room = rooms.find(r => r._id === selectedRoom);
       
       if (!room || !hotel) {
         alert('Room or hotel not found');
@@ -154,35 +183,39 @@ const Dashboard: React.FC = () => {
       const days = Math.ceil((checkOutDate.getTime() - checkInDate.getTime()) / (1000 * 60 * 60 * 24));
       const totalPrice = room.price * days;
       
-      const newBooking = {
-        _id: 'b' + Date.now(),
-        customerId: user.id,
+      const bookingPayload = {
         customerName: user.name,
         customerEmail: user.email,
-        roomId: {
-          _id: selectedRoom,
-          roomNumber: room.roomNumber,
-          type: room.type,
-          price: room.price
-        },
-        hotelId: {
-          _id: selectedHotel,
-          name: hotel.name,
-          location: hotel.location
-        },
+        roomId: room._id,
+        hotelId: hotel._id,
+        hotelName: hotel.name,
+        roomNumber: room.roomNumber,
+        roomType: room.type,
+        roomPrice: room.price,
         checkIn: bookingData.checkIn,
         checkOut: bookingData.checkOut,
         totalPrice,
-        status: 'pending',
         guests: bookingData.guests,
-        specialRequests: '',
-        createdAt: new Date().toISOString()
+        specialRequests: ''
       };
-      
-      addBooking(newBooking);
-      setShowBookingModal(false);
-      setBookingData({ checkIn: '', checkOut: '', guests: 1 });
-      alert('🎉 Booking submitted successfully! \n\n⏳ Your booking is now PENDING and waiting for manager approval.');
+
+      const token = localStorage.getItem('token');
+      const response = await fetch('/api/bookings', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(bookingPayload)
+      });
+
+      if (response.ok) {
+        setShowBookingModal(false);
+        setBookingData({ checkIn: '', checkOut: '', guests: 1 });
+        alert(`🎉 Booking submitted successfully!\n\nHotel: ${hotel.name}\nRoom: ${room.roomNumber}\nTotal: ₹${totalPrice} for ${days} days\n\n⏳ Your booking is now PENDING and waiting for manager approval.`);
+      } else {
+        throw new Error('Failed to create booking');
+      }
     } catch (error) {
       console.error('Error creating booking:', error);
       alert('Error creating booking');
@@ -193,14 +226,11 @@ const Dashboard: React.FC = () => {
     if (!user) return;
     
     try {
-      const { mockHotels, toggleFavorite: toggleFav } = await import('../utils/mockData');
-      const hotel = mockHotels.find((h: any) => h._id === hotelId);
-      const result = toggleFav(user.id, hotelId, hotel?.name || '', hotel?.location || '');
-      
-      if (result.isFavorite) {
-        setFavorites([...favorites, hotelId]);
-      } else {
+      // Simple toggle for now - in real app would save to database
+      if (favorites.includes(hotelId)) {
         setFavorites(favorites.filter(id => id !== hotelId));
+      } else {
+        setFavorites([...favorites, hotelId]);
       }
     } catch (error) {
       console.error('Error toggling favorite:', error);
@@ -282,55 +312,23 @@ const Dashboard: React.FC = () => {
               </div>
             </div>
 
-            {/* Hotels Overview */}
+            {/* Admin Actions */}
             <div className="bg-white p-6 rounded-xl shadow-lg">
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="text-xl font-semibold text-gray-900">All Hotels Overview</h3>
-                <div className="text-sm text-gray-500">{hotels.length} total hotels</div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Admin Actions</h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <button className="p-4 text-left border border-gray-200 rounded-lg hover:bg-gray-50 transition duration-200">
+                  <h4 className="font-medium text-gray-900">Manage Users</h4>
+                  <p className="text-sm text-gray-500 mt-1">View and manage all user accounts</p>
+                </button>
+                <button className="p-4 text-left border border-gray-200 rounded-lg hover:bg-gray-50 transition duration-200">
+                  <h4 className="font-medium text-gray-900">Manage Hotels</h4>
+                  <p className="text-sm text-gray-500 mt-1">View and manage all hotels</p>
+                </button>
+                <button className="p-4 text-left border border-gray-200 rounded-lg hover:bg-gray-50 transition duration-200">
+                  <h4 className="font-medium text-gray-900">Manage Rooms</h4>
+                  <p className="text-sm text-gray-500 mt-1">View and manage all rooms</p>
+                </button>
               </div>
-              
-              {hotels.length === 0 ? (
-                <div className="text-center py-8">
-                  <svg className="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                  </svg>
-                  <p className="text-gray-500">No hotels registered yet</p>
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {hotels.slice(0, 6).map((hotel) => {
-                    const hotelRooms = rooms.filter(room => room.hotelId === hotel._id);
-                    const availableRooms = hotelRooms.filter(room => room.availability);
-                    
-                    return (
-                      <div key={hotel._id} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition duration-200">
-                        <div className="flex items-center justify-between mb-2">
-                          <h4 className="font-semibold text-gray-900 truncate">{hotel.name}</h4>
-                          <div className="flex items-center">
-                            <svg className="w-4 h-4 text-yellow-400 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                              <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                            </svg>
-                            <span className="text-sm text-gray-600">{hotel.rating}</span>
-                          </div>
-                        </div>
-                        <p className="text-sm text-gray-600 mb-2">{hotel.location}</p>
-                        <div className="flex items-center justify-between text-sm">
-                          <span className="text-gray-500">{availableRooms.length} rooms available</span>
-                          <span className="text-green-600 font-medium">{hotelRooms.length} total rooms</span>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-              
-              {hotels.length > 6 && (
-                <div className="text-center mt-4">
-                  <button className="text-blue-600 hover:text-blue-800 text-sm font-medium">
-                    View all {hotels.length} hotels →
-                  </button>
-                </div>
-              )}
             </div>
           </div>
         );
@@ -532,12 +530,6 @@ const Dashboard: React.FC = () => {
                               disabled={availableRooms.length === 0}
                             >
                               {availableRooms.length > 0 ? 'Book Now' : 'No Rooms'}
-                            </button>
-                            <button 
-                              onClick={() => toggleFavorite(hotel._id)}
-                              className="bg-red-100 text-red-600 hover:bg-red-200 px-3 py-2 rounded-lg transition duration-200"
-                            >
-                              {favorites.includes(hotel._id) ? '❤️' : '🤍'}
                             </button>
                           </div>
                         </div>

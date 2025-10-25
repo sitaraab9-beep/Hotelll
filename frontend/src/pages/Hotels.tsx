@@ -39,7 +39,7 @@ const Hotels: React.FC = () => {
       
       if (response.ok) {
         const data = await response.json();
-        setHotels(data.hotels || []);
+        setHotels(data || []);
       }
     } catch (error) {
       console.error('Error fetching hotels:', error);
