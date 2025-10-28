@@ -33,6 +33,54 @@ const AllRooms: React.FC = () => {
     );
   }
 
+  const handleDelete = async (roomId: string, roomNumber: string, hotelName: string) => {
+    if (window.confirm(`Delete Room ${roomNumber} from ${hotelName}?`)) {
+      try {
+        const token = localStorage.getItem('token');
+        const response = await fetch(`/api/rooms/${roomId}`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        
+        if (response.ok) {
+          alert('Room deleted successfully');
+          fetchRooms();
+        } else {
+          alert('Error deleting room');
+        }
+      } catch (error) {
+        console.error('Error deleting room:', error);
+        alert('Error deleting room');
+      }
+    }
+  };
+
+  const handleRestore = async (roomId: string) => {
+    if (window.confirm('Restore this room? It will be available for booking again.')) {
+      try {
+        const token = localStorage.getItem('token');
+        const response = await fetch(`/api/rooms/${roomId}/restore`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        
+        if (response.ok) {
+          alert('Room restored successfully');
+          fetchRooms();
+        } else {
+          alert('Error restoring room');
+        }
+      } catch (error) {
+        console.error('Error restoring room:', error);
+        alert('Error restoring room');
+      }
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 pt-20">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -144,54 +192,6 @@ const AllRooms: React.FC = () => {
       </div>
     </div>
   );
-
-  const handleDelete = async (roomId: string, roomNumber: string, hotelName: string) => {
-    if (window.confirm(`Delete Room ${roomNumber} from ${hotelName}?`)) {
-      try {
-        const token = localStorage.getItem('token');
-        const response = await fetch(`/api/rooms/${roomId}`, {
-          method: 'DELETE',
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
-        
-        if (response.ok) {
-          alert('Room deleted successfully');
-          fetchRooms();
-        } else {
-          alert('Error deleting room');
-        }
-      } catch (error) {
-        console.error('Error deleting room:', error);
-        alert('Error deleting room');
-      }
-    }
-  };
-
-  const handleRestore = async (roomId: string) => {
-    if (window.confirm('Restore this room? It will be available for booking again.')) {
-      try {
-        const token = localStorage.getItem('token');
-        const response = await fetch(`/api/rooms/${roomId}/restore`, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
-        
-        if (response.ok) {
-          alert('Room restored successfully');
-          fetchRooms();
-        } else {
-          alert('Error restoring room');
-        }
-      } catch (error) {
-        console.error('Error restoring room:', error);
-        alert('Error restoring room');
-      }
-    }
-  };
 };
 
 export default AllRooms;

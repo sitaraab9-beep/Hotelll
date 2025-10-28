@@ -37,7 +37,7 @@ const Dashboard: React.FC = () => {
     totalRevenue: 0,
     monthlyRevenue: 0
   });
-  const [analytics, setAnalytics] = useState<{
+  const [analytics] = useState<{
     roomTypes: any[];
     monthlyBookings: any[];
     revenueByHotel: any[];
@@ -50,8 +50,8 @@ const Dashboard: React.FC = () => {
   });
   const [hotels, setHotels] = useState<Hotel[]>([]);
   const [rooms, setRooms] = useState<Room[]>([]);
-  const [users, setUsers] = useState<any[]>([]);
-  const [bookings, setBookings] = useState<any[]>([]);
+  const [users] = useState<any[]>([]);
+  const [bookings] = useState<any[]>([]);
   const [favorites, setFavorites] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [showBookingModal, setShowBookingModal] = useState(false);
@@ -282,20 +282,7 @@ const Dashboard: React.FC = () => {
     }
   };
 
-  const toggleFavorite = async (hotelId: string) => {
-    if (!user) return;
-    
-    try {
-      // Simple toggle for now - in real app would save to database
-      if (favorites.includes(hotelId)) {
-        setFavorites(favorites.filter(id => id !== hotelId));
-      } else {
-        setFavorites([...favorites, hotelId]);
-      }
-    } catch (error) {
-      console.error('Error toggling favorite:', error);
-    }
-  };
+
 
   const renderDashboardContent = () => {
     switch (user?.role) {

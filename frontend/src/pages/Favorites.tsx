@@ -10,7 +10,7 @@ const Favorites: React.FC = () => {
 
   useEffect(() => {
     fetchFavoriteHotels();
-  }, [favorites, user]);
+  }, [favorites, user]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchFavoriteHotels = async () => {
     if (!user) {
