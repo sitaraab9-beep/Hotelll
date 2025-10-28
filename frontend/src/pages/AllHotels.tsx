@@ -20,6 +20,100 @@ const AllHotels: React.FC = () => {
     fetchData();
   }, []);
 
+  const handleEdit = (hotel: any) => {
+    setEditingHotel(hotel);
+    setFormData({
+      name: hotel.name,
+      location: hotel.location,
+      description: hotel.description,
+      amenities: hotel.amenities.join(', '),
+      imageUrl: hotel.imageUrl || ''
+    });
+    setShowEditModal(true);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    const hotelData = {
+      ...formData,
+      amenities: formData.amenities.split(',').map((a: string) => a.trim()).filter((a: string) => a)
+    };
+
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`/api/hotels/${editingHotel._id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(hotelData)
+      });
+      
+      if (response.ok) {
+        fetchData();
+        setShowEditModal(false);
+        setEditingHotel(null);
+        setFormData({ name: '', location: '', description: '', amenities: '', imageUrl: '' });
+        alert('Hotel updated successfully!');
+      } else {
+        alert('Error updating hotel');
+      }
+    } catch (error) {
+      console.error('Error updating hotel:', error);
+      alert('Error updating hotel');
+    }
+  };
+
+  const handleDelete = async (hotelId: string, hotelName: string) => {
+    if (window.confirm(`Delete hotel ${hotelName}? This will hide it from managers and customers.`)) {
+      try {
+        const token = localStorage.getItem('token');
+        const response = await fetch(`/api/hotels/${hotelId}`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        
+        if (response.ok) {
+          alert('Hotel deleted successfully');
+          fetchData();
+        } else {
+          alert('Error deleting hotel');
+        }
+      } catch (error) {
+        console.error('Error deleting hotel:', error);
+        alert('Error deleting hotel');
+      }
+    }
+  };
+
+  const handleRestore = async (hotelId: string) => {
+    if (window.confirm('Restore this hotel? It will be visible to managers and customers again.')) {
+      try {
+        const token = localStorage.getItem('token');
+        const response = await fetch(`/api/hotels/${hotelId}/restore`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        
+        if (response.ok) {
+          alert('Hotel restored successfully');
+          fetchData();
+        } else {
+          alert('Error restoring hotel');
+        }
+      } catch (error) {
+        console.error('Error restoring hotel:', error);
+        alert('Error restoring hotel');
+      }
+    }
+  };
+
   const fetchData = async () => {
     try {
       const token = localStorage.getItem('token');
@@ -299,100 +393,6 @@ const AllHotels: React.FC = () => {
       )}
     </div>
   );
-
-  const handleEdit = (hotel: any) => {
-    setEditingHotel(hotel);
-    setFormData({
-      name: hotel.name,
-      location: hotel.location,
-      description: hotel.description,
-      amenities: hotel.amenities.join(', '),
-      imageUrl: hotel.imageUrl || ''
-    });
-    setShowEditModal(true);
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    const hotelData = {
-      ...formData,
-      amenities: formData.amenities.split(',').map((a: string) => a.trim()).filter((a: string) => a)
-    };
-
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`/api/hotels/${editingHotel._id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(hotelData)
-      });
-      
-      if (response.ok) {
-        fetchData();
-        setShowEditModal(false);
-        setEditingHotel(null);
-        setFormData({ name: '', location: '', description: '', amenities: '', imageUrl: '' });
-        alert('Hotel updated successfully!');
-      } else {
-        alert('Error updating hotel');
-      }
-    } catch (error) {
-      console.error('Error updating hotel:', error);
-      alert('Error updating hotel');
-    }
-  };
-
-  const handleDelete = async (hotelId: string, hotelName: string) => {
-    if (window.confirm(`Delete hotel ${hotelName}? This will hide it from managers and customers.`)) {
-      try {
-        const token = localStorage.getItem('token');
-        const response = await fetch(`/api/hotels/${hotelId}`, {
-          method: 'DELETE',
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
-        
-        if (response.ok) {
-          alert('Hotel deleted successfully');
-          fetchData();
-        } else {
-          alert('Error deleting hotel');
-        }
-      } catch (error) {
-        console.error('Error deleting hotel:', error);
-        alert('Error deleting hotel');
-      }
-    }
-  };
-
-  const handleRestore = async (hotelId: string) => {
-    if (window.confirm('Restore this hotel? It will be visible to managers and customers again.')) {
-      try {
-        const token = localStorage.getItem('token');
-        const response = await fetch(`/api/hotels/${hotelId}/restore`, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
-        
-        if (response.ok) {
-          alert('Hotel restored successfully');
-          fetchData();
-        } else {
-          alert('Error restoring hotel');
-        }
-      } catch (error) {
-        console.error('Error restoring hotel:', error);
-        alert('Error restoring hotel');
-      }
-    }
-  };
 };
 
 export default AllHotels;

@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { SidebarProvider } from './context/SidebarContext';
 import { FavoritesProvider } from './context/FavoritesContext';
+import ErrorBoundary from './components/ErrorBoundary';
 import Navbar from './components/Navbar';
 import Sidebar from './components/Sidebar';
 import Home from './pages/Home';
@@ -27,14 +28,15 @@ import ProtectedRoute from './components/ProtectedRoute';
 
 function App() {
   return (
-    <AuthProvider>
-      <FavoritesProvider>
-        <SidebarProvider>
-        <Router>
-          <div className="min-h-screen bg-gray-50">
-            <Navbar />
-            <Sidebar />
-            <Routes>
+    <ErrorBoundary>
+      <AuthProvider>
+        <FavoritesProvider>
+          <SidebarProvider>
+          <Router>
+            <div className="min-h-screen bg-gray-50">
+              <Navbar />
+              <Sidebar />
+              <Routes>
               <Route path="/" element={<Home />} />
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
@@ -161,12 +163,13 @@ function App() {
                   </ProtectedRoute>
                 } 
               />
-            </Routes>
-          </div>
-        </Router>
-        </SidebarProvider>
-      </FavoritesProvider>
-    </AuthProvider>
+              </Routes>
+            </div>
+          </Router>
+          </SidebarProvider>
+        </FavoritesProvider>
+      </AuthProvider>
+    </ErrorBoundary>
   );
 }
 

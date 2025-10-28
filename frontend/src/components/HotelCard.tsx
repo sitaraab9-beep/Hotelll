@@ -9,6 +9,7 @@ interface Hotel {
   location: string;
   description: string;
   rating: number;
+  imageUrl?: string;
   images?: string[];
 }
 
@@ -37,8 +38,19 @@ const HotelCard: React.FC<HotelCardProps> = ({ hotel }) => {
 
   return (
     <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
-      <div className="h-48 bg-gray-200 flex items-center justify-center relative">
-        <span className="text-gray-500">Hotel Image</span>
+      <div className="h-48 bg-gray-200 flex items-center justify-center relative overflow-hidden">
+        {hotel.imageUrl ? (
+          <img 
+            src={hotel.imageUrl} 
+            alt={hotel.name}
+            className="w-full h-full object-cover"
+            onError={(e) => {
+              e.currentTarget.style.display = 'none';
+              e.currentTarget.nextElementSibling?.classList.remove('hidden');
+            }}
+          />
+        ) : null}
+        <span className={`text-gray-500 ${hotel.imageUrl ? 'hidden' : ''}`}>Hotel Image</span>
         {user && (
           <button
             onClick={toggleFavorite}

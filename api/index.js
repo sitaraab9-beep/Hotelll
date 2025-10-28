@@ -446,8 +446,84 @@ export default async function handler(req, res) {
       return res.json(users);
     }
 
+    // Admin Analytics Route
+    if (method === 'GET' && path === '/admin/analytics') {
+      const totalHotels = await Hotel.countDocuments({ isDeleted: false });
+      const totalRooms = await Room.countDocuments({ isDeleted: false });
+      const totalBookings = await Booking.countDocuments();
+      const totalUsers = await User.countDocuments();
+      
+      const bookings = await Booking.find({});
+      const totalRevenue = bookings.reduce((sum, booking) => sum + booking.totalPrice, 0);
+      
+      const currentMonth = new Date().getMonth();
+      const currentYear = new Date().getFullYear();
+      const monthlyRevenue = bookings
+        .filter(booking => {
+          const bookingDate = new Date(booking.createdAt);
+          return bookingDate.getMonth() === currentMonth && bookingDate.getFullYear() === currentYear;
+        })
+        .reduce((sum, booking) => sum + booking.totalPrice, 0);
+      
+      const rooms = await Room.find({ isDeleted: false });
+      const roomTypeCount = {};
+      rooms.forEach(room => {
+        roomTypeCount[room.type] = (roomTypeCount[room.type] || 0) + 1;
+      });
+      
+      const roomTypes = Object.entries(roomTypeCount)
+        .map(([type, count]) => ({ type, count }))
+        .sort((a, b) => b.count - a.count);
+      
+      const monthlyBookings = Array.from({ length: 12 }, (_, i) => {
+        const month = new Date(2024, i).toLocaleString('default', { month: 'short' });
+        const count = bookings.filter(booking => {
+          const bookingDate = new Date(booking.createdAt);
+          return bookingDate.getMonth() === i && bookingDate.getFullYear() === currentYear;
+        }).length;
+        return { month, count };
+      });
+      
+      const peakMonths = [...monthlyBookings]
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 3);
+      
+      const hotels = await Hotel.find({ isDeleted: false });
+      const revenueByHotel = hotels.map(hotel => {
+        const hotelBookings = bookings.filter(booking => booking.hotelId === hotel._id.toString());
+        const revenue = hotelBookings.reduce((sum, booking) => sum + booking.totalPrice, 0);
+        return { name: hotel.name, revenue };
+      }).sort((a, b) => b.revenue - a.revenue);
+      
+      return res.json({
+        success: true,
+        stats: {
+          totalHotels,
+          totalRooms,
+          totalBookings,
+          totalUsers,
+          totalRevenue,
+          monthlyRevenue
+        },
+        analytics: {
+          revenueByHotel,
+          roomTypes,
+          monthlyBookings,
+          peakMonths
+        }
+      });
+    }
+
     if (method === 'GET' && path === '/test') {
       return res.json({ message: 'Backend API is working!' });
+    }
+
+    if (method === 'GET' && path === '/health') {
+      return res.json({ 
+        message: 'HotelEase API is running!',
+        timestamp: new Date().toISOString(),
+        environment: 'production'
+      });
     }
 
     return res.status(404).json({ message: 'API route not found' });
