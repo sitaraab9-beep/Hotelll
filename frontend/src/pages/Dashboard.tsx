@@ -111,75 +111,6 @@ Booked on: ${new Date(ticket.bookingDate).toLocaleDateString()}
   );
 };
 
-const ManagerBookings: React.FC = () => {
-  const [bookings, setBookings] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    fetchBookings();
-  }, []);
-
-  const fetchBookings = async () => {
-    try {
-      const response = await fetch('/api/bookings');
-      if (response.ok) {
-        const data = await response.json();
-        setBookings(data.filter((b: any) => b.status === 'pending'));
-      }
-    } catch (error) {
-      console.error('Error fetching bookings:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const approveBooking = async (bookingId: string) => {
-    try {
-      const response = await fetch(`/api/bookings/${bookingId}/approve`, {
-        method: 'PUT'
-      });
-      if (response.ok) {
-        alert('Booking approved successfully!');
-        fetchBookings();
-      }
-    } catch (error) {
-      console.error('Error approving booking:', error);
-    }
-  };
-
-  if (loading) return <div className="text-center py-4">Loading bookings...</div>;
-
-  return (
-    <div className="bg-white p-6 rounded-xl shadow-lg">
-      <h3 className="text-lg font-semibold text-gray-900 mb-4">Pending Bookings</h3>
-      {bookings.length === 0 ? (
-        <p className="text-gray-500 text-center py-4">No pending bookings</p>
-      ) : (
-        <div className="space-y-4">
-          {bookings.map((booking) => (
-            <div key={booking._id} className="border border-gray-200 rounded-lg p-4">
-              <div className="flex justify-between items-start">
-                <div>
-                  <h4 className="font-semibold">{booking.customerName}</h4>
-                  <p className="text-sm text-gray-600">{booking.hotelName} - Room {booking.roomNumber}</p>
-                  <p className="text-sm text-gray-500">{booking.checkIn} to {booking.checkOut}</p>
-                  <p className="text-sm font-medium text-green-600">₹{booking.totalPrice}</p>
-                </div>
-                <button
-                  onClick={() => approveBooking(booking._id)}
-                  className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
-                >
-                  Approve
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-};
-
 const HotelsList: React.FC = () => {
   const { user } = useAuth();
   const [hotels, setHotels] = useState<any[]>([]);
@@ -467,14 +398,15 @@ const Dashboard: React.FC = () => {
                   <h4 className="font-medium text-gray-900">Manage Rooms</h4>
                   <p className="text-sm text-gray-500 mt-1">Add or edit room details</p>
                 </button>
-                <button className="p-4 text-left border border-gray-200 rounded-lg hover:bg-gray-50 transition duration-200">
+                <button 
+                  onClick={() => window.location.href = '/manager-bookings'}
+                  className="p-4 text-left border border-gray-200 rounded-lg hover:bg-gray-50 transition duration-200"
+                >
                   <h4 className="font-medium text-gray-900">View Bookings</h4>
                   <p className="text-sm text-gray-500 mt-1">Check recent reservations</p>
                 </button>
               </div>
             </div>
-            
-            <ManagerBookings />
           </div>
         );
 
