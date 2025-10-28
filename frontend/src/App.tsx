@@ -24,6 +24,7 @@ import AllRooms from './pages/AllRooms';
 import HotelSearch from './pages/HotelSearch';
 import HotelDetails from './pages/HotelDetails';
 import BookingPage from './pages/BookingPage';
+import Analytics from './pages/Analytics';
 import ProtectedRoute from './components/ProtectedRoute';
 
 function App() {
@@ -159,6 +160,16 @@ function App() {
                   <ProtectedRoute>
                     <div className="pt-16">
                       <BookingPage />
+                    </div>
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/analytics" 
+                element={
+                  <ProtectedRoute>
+                    <div className="pt-16">
+                      <Analytics />
                     </div>
                   </ProtectedRoute>
                 } 

@@ -3,6 +3,9 @@ import React, { useState, useEffect } from 'react';
 const AllRooms: React.FC = () => {
   const [rooms, setRooms] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showModal, setShowModal] = useState(false);
+  const [selectedRoom, setSelectedRoom] = useState<any>(null);
+  const [modalType, setModalType] = useState<'view' | 'edit'>('view');
 
   useEffect(() => {
     fetchRooms();
@@ -54,6 +57,38 @@ const AllRooms: React.FC = () => {
         console.error('Error deleting room:', error);
         alert('Error deleting room');
       }
+    }
+  };
+
+  const handleView = (room: any) => {
+    setSelectedRoom(room);
+    setModalType('view');
+    setShowModal(true);
+  };
+
+  const handleEdit = (room: any) => {
+    setSelectedRoom(room);
+    setModalType('edit');
+    setShowModal(true);
+  };
+
+  const handleSave = async () => {
+    try {
+      const response = await fetch(`/api/rooms/${selectedRoom._id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(selectedRoom)
+      });
+      
+      if (response.ok) {
+        alert('Room updated successfully');
+        setShowModal(false);
+        fetchRooms();
+      }
+    } catch (error) {
+      console.error('Error updating room:', error);
     }
   };
 
@@ -149,13 +184,13 @@ const AllRooms: React.FC = () => {
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                       <div className="flex space-x-2">
                         <button 
-                          onClick={() => alert(`Room Details:\nRoom: ${room.roomNumber}\nHotel: ${room.hotelName}\nType: ${room.type}\nPrice: ₹${room.price}/night\nCapacity: ${room.capacity} guests\nStatus: ${room.isAvailable ? 'Available' : 'Occupied'}\nDeleted: ${room.isDeleted ? 'Yes' : 'No'}`)}
+                          onClick={() => handleView(room)}
                           className="text-blue-600 hover:text-blue-900"
                         >
                           View
                         </button>
                         <button 
-                          onClick={() => alert(`Edit functionality for Room ${room.roomNumber} - Coming soon!`)}
+                          onClick={() => handleEdit(room)}
                           className="text-green-600 hover:text-green-900"
                         >
                           Edit
@@ -190,6 +225,90 @@ const AllRooms: React.FC = () => {
           </div>
         )}
       </div>
+
+      {/* Modal */}
+      {showModal && selectedRoom && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-8 rounded-lg max-w-md w-full mx-4">
+            <h2 className="text-xl font-bold mb-4">
+              {modalType === 'view' ? 'Room Details' : 'Edit Room'}
+            </h2>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Room Number</label>
+                <input
+                  type="text"
+                  value={selectedRoom.roomNumber}
+                  onChange={(e) => setSelectedRoom({...selectedRoom, roomNumber: e.target.value})}
+                  disabled={modalType === 'view'}
+                  className="w-full p-2 border rounded"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Type</label>
+                <input
+                  type="text"
+                  value={selectedRoom.type}
+                  onChange={(e) => setSelectedRoom({...selectedRoom, type: e.target.value})}
+                  disabled={modalType === 'view'}
+                  className="w-full p-2 border rounded"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Price</label>
+                <input
+                  type="number"
+                  value={selectedRoom.price}
+                  onChange={(e) => setSelectedRoom({...selectedRoom, price: Number(e.target.value)})}
+                  disabled={modalType === 'view'}
+                  className="w-full p-2 border rounded"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Capacity</label>
+                <input
+                  type="number"
+                  value={selectedRoom.capacity}
+                  onChange={(e) => setSelectedRoom({...selectedRoom, capacity: Number(e.target.value)})}
+                  disabled={modalType === 'view'}
+                  className="w-full p-2 border rounded"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Hotel</label>
+                <input
+                  type="text"
+                  value={selectedRoom.hotelName}
+                  disabled
+                  className="w-full p-2 border rounded bg-gray-100"
+                />
+              </div>
+            </div>
+            
+            <div className="flex gap-4 mt-6">
+              {modalType === 'edit' && (
+                <button
+                  onClick={handleSave}
+                  className="flex-1 bg-blue-600 text-white py-2 rounded hover:bg-blue-700"
+                >
+                  Save
+                </button>
+              )}
+              <button
+                onClick={() => setShowModal(false)}
+                className="flex-1 bg-gray-500 text-white py-2 rounded hover:bg-gray-600"
+              >
+                {modalType === 'view' ? 'Close' : 'Cancel'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
