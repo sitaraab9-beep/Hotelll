@@ -2,6 +2,184 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import AdminDashboard from './AdminDashboard';
 
+const CustomerBookings: React.FC = () => {
+  const { user } = useAuth();
+  const [bookings, setBookings] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (user?.role === 'customer') {
+      fetchBookings();
+    }
+  }, [user]);
+
+  const fetchBookings = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('/api/bookings', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setBookings(data);
+      }
+    } catch (error) {
+      console.error('Error fetching bookings:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const downloadTicket = async (bookingId: string) => {
+    try {
+      const response = await fetch(`/api/bookings/${bookingId}/ticket`);
+      if (response.ok) {
+        const data = await response.json();
+        const ticket = data.ticket;
+        
+        const ticketContent = `
+=== HOTEL BOOKING TICKET ===
+
+Booking ID: ${ticket.bookingId}
+Customer: ${ticket.customerName}
+Hotel: ${ticket.hotelName}
+Room: ${ticket.roomNumber}
+Check-in: ${ticket.checkIn}
+Check-out: ${ticket.checkOut}
+Total Amount: ₹${ticket.totalPrice}
+Status: ${ticket.status.toUpperCase()}
+Booked on: ${new Date(ticket.bookingDate).toLocaleDateString()}
+
+=== Thank you for choosing us! ===
+        `;
+        
+        const blob = new Blob([ticketContent], { type: 'text/plain' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `ticket-${bookingId}.txt`;
+        a.click();
+        window.URL.revokeObjectURL(url);
+      } else {
+        alert('Ticket not available. Booking must be confirmed first.');
+      }
+    } catch (error) {
+      console.error('Error downloading ticket:', error);
+    }
+  };
+
+  if (user?.role !== 'customer') return null;
+  if (loading) return <div className="text-center py-4">Loading bookings...</div>;
+
+  return (
+    <div className="bg-white p-6 rounded-xl shadow-lg">
+      <h3 className="text-lg font-semibold text-gray-900 mb-4">My Bookings</h3>
+      {bookings.length === 0 ? (
+        <p className="text-gray-500 text-center py-4">No bookings yet</p>
+      ) : (
+        <div className="space-y-4">
+          {bookings.map((booking) => (
+            <div key={booking._id} className="border border-gray-200 rounded-lg p-4">
+              <div className="flex justify-between items-start">
+                <div>
+                  <h4 className="font-semibold">{booking.hotelName}</h4>
+                  <p className="text-sm text-gray-600">Room {booking.roomNumber}</p>
+                  <p className="text-sm text-gray-500">{booking.checkIn} to {booking.checkOut}</p>
+                  <p className="text-sm font-medium text-green-600">₹{booking.totalPrice}</p>
+                  <span className={`inline-block px-2 py-1 text-xs rounded-full mt-2 ${
+                    booking.status === 'confirmed' ? 'bg-green-100 text-green-800' :
+                    booking.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                    'bg-red-100 text-red-800'
+                  }`}>
+                    {booking.status.toUpperCase()}
+                  </span>
+                </div>
+                {booking.status === 'confirmed' && (
+                  <button
+                    onClick={() => downloadTicket(booking._id)}
+                    className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+                  >
+                    Download Ticket
+                  </button>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+const ManagerBookings: React.FC = () => {
+  const [bookings, setBookings] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchBookings();
+  }, []);
+
+  const fetchBookings = async () => {
+    try {
+      const response = await fetch('/api/bookings');
+      if (response.ok) {
+        const data = await response.json();
+        setBookings(data.filter((b: any) => b.status === 'pending'));
+      }
+    } catch (error) {
+      console.error('Error fetching bookings:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const approveBooking = async (bookingId: string) => {
+    try {
+      const response = await fetch(`/api/bookings/${bookingId}/approve`, {
+        method: 'PUT'
+      });
+      if (response.ok) {
+        alert('Booking approved successfully!');
+        fetchBookings();
+      }
+    } catch (error) {
+      console.error('Error approving booking:', error);
+    }
+  };
+
+  if (loading) return <div className="text-center py-4">Loading bookings...</div>;
+
+  return (
+    <div className="bg-white p-6 rounded-xl shadow-lg">
+      <h3 className="text-lg font-semibold text-gray-900 mb-4">Pending Bookings</h3>
+      {bookings.length === 0 ? (
+        <p className="text-gray-500 text-center py-4">No pending bookings</p>
+      ) : (
+        <div className="space-y-4">
+          {bookings.map((booking) => (
+            <div key={booking._id} className="border border-gray-200 rounded-lg p-4">
+              <div className="flex justify-between items-start">
+                <div>
+                  <h4 className="font-semibold">{booking.customerName}</h4>
+                  <p className="text-sm text-gray-600">{booking.hotelName} - Room {booking.roomNumber}</p>
+                  <p className="text-sm text-gray-500">{booking.checkIn} to {booking.checkOut}</p>
+                  <p className="text-sm font-medium text-green-600">₹{booking.totalPrice}</p>
+                </div>
+                <button
+                  onClick={() => approveBooking(booking._id)}
+                  className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+                >
+                  Approve
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
 const HotelsList: React.FC = () => {
   const { user } = useAuth();
   const [hotels, setHotels] = useState<any[]>([]);
@@ -100,7 +278,7 @@ const HotelsList: React.FC = () => {
       if (response.ok) {
         setShowBookingModal(false);
         setBookingData({ checkIn: '', checkOut: '', guests: 1 });
-        alert(`🎉 Booking submitted successfully!\n\nHotel: ${hotel.name}\nRoom: ${room.roomNumber}\nTotal: ₹${totalPrice} for ${days} days`);
+        alert(`🎉 Booking submitted successfully!\n\nHotel: ${hotel.name}\nRoom: ${room.roomNumber}\nTotal: ₹${totalPrice} for ${days} days\n\n⏳ Status: PENDING\nWaiting for manager approval.\nYou can download your ticket once approved.`);
       } else {
         throw new Error('Failed to create booking');
       }
@@ -295,6 +473,8 @@ const Dashboard: React.FC = () => {
                 </button>
               </div>
             </div>
+            
+            <ManagerBookings />
           </div>
         );
 
@@ -351,6 +531,7 @@ const Dashboard: React.FC = () => {
               </div>
             </div>
 
+            <CustomerBookings />
             <HotelsList />
           </div>
         );

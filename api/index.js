@@ -439,6 +439,41 @@ export default async function handler(req, res) {
       return res.json(booking);
     }
 
+    // Approve booking
+    if (method === 'PUT' && path.startsWith('/bookings/') && path.endsWith('/approve')) {
+      const bookingId = path.split('/')[2];
+      const booking = await Booking.findByIdAndUpdate(
+        bookingId, 
+        { status: 'confirmed' }, 
+        { new: true }
+      );
+      return res.json({ success: true, booking });
+    }
+
+    // Download ticket
+    if (method === 'GET' && path.startsWith('/bookings/') && path.endsWith('/ticket')) {
+      const bookingId = path.split('/')[2];
+      const booking = await Booking.findById(bookingId);
+      
+      if (!booking || booking.status !== 'confirmed') {
+        return res.status(400).json({ message: 'Booking not confirmed' });
+      }
+      
+      const ticket = {
+        bookingId: booking._id,
+        customerName: booking.customerName,
+        hotelName: booking.hotelName,
+        roomNumber: booking.roomNumber,
+        checkIn: booking.checkIn,
+        checkOut: booking.checkOut,
+        totalPrice: booking.totalPrice,
+        status: booking.status,
+        bookingDate: booking.createdAt
+      };
+      
+      return res.json({ success: true, ticket });
+    }
+
     // Users Management Route
     if (method === 'GET' && path === '/users') {
       // Return all users for admin
