@@ -512,10 +512,6 @@ export default async function handler(req, res) {
 
     // Admin Analytics Route
     if (method === 'GET' && path === '/admin/analytics') {
-      const token = req.headers.authorization?.replace('Bearer ', '');
-      if (!token) {
-        return res.status(401).json({ message: 'No token provided' });
-      }
       const totalHotels = await Hotel.countDocuments({ isDeleted: false });
       const totalRooms = await Room.countDocuments({ isDeleted: false });
       const totalBookings = await Booking.countDocuments();

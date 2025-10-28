@@ -30,12 +30,7 @@ const AdminDashboard: React.FC = () => {
   const fetchAnalytics = async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem('token');
-      const response = await fetch('/api/admin/analytics', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
+      const response = await fetch('/api/admin/analytics');
 
       if (!response.ok) {
         throw new Error('Failed to fetch analytics');
