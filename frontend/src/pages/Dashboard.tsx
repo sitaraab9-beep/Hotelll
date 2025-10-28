@@ -37,7 +37,12 @@ const Dashboard: React.FC = () => {
     totalRevenue: 0,
     monthlyRevenue: 0
   });
-  const [analytics, setAnalytics] = useState({
+  const [analytics, setAnalytics] = useState<{
+    roomTypes: any[];
+    monthlyBookings: any[];
+    revenueByHotel: any[];
+    peakMonths: any[];
+  }>({
     roomTypes: [],
     monthlyBookings: [],
     revenueByHotel: [],
