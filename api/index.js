@@ -590,6 +590,11 @@ export default async function handler(req, res) {
       });
     }
 
+    // Dashboard route
+    if (method === 'GET' && path === '/dashboard') {
+      return res.json({ message: 'Dashboard route working' });
+    }
+
     // Catch all route
     if (method === 'GET' && path === '/') {
       return res.json({ message: 'HotelEase API - All endpoints working' });
