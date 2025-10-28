@@ -37,12 +37,7 @@ const Dashboard: React.FC = () => {
     totalRevenue: 0,
     monthlyRevenue: 0
   });
-  const [analytics, setAnalytics] = useState<{
-    roomTypes: any[];
-    monthlyBookings: any[];
-    revenueByHotel: any[];
-    peakMonths: any[];
-  }>({
+  const [analytics, setAnalytics] = useState({
     roomTypes: [],
     monthlyBookings: [],
     revenueByHotel: [],
@@ -50,9 +45,7 @@ const Dashboard: React.FC = () => {
   });
   const [hotels, setHotels] = useState<Hotel[]>([]);
   const [rooms, setRooms] = useState<Room[]>([]);
-  const [users, setUsers] = useState<any[]>([]);
   const [bookings, setBookings] = useState<any[]>([]);
-  const [favorites, setFavorites] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [showBookingModal, setShowBookingModal] = useState(false);
   const [selectedHotel, setSelectedHotel] = useState<string>('');
@@ -82,20 +75,14 @@ const Dashboard: React.FC = () => {
       });
       const roomsData = roomsResponse.ok ? await roomsResponse.json() : [];
 
-      // Fetch bookings and users for admin
+      // Fetch bookings for admin
       let bookingsData: any[] = [];
-      let usersData: any[] = [];
       
       if (user.role === 'admin') {
         try {
           const bookingsResponse = await fetch('/api/bookings');
           if (bookingsResponse.ok) {
             bookingsData = await bookingsResponse.json();
-          }
-          
-          const usersResponse = await fetch('/api/users');
-          if (usersResponse.ok) {
-            usersData = await usersResponse.json();
           }
         } catch (error) {
           console.log('Admin data not available');
@@ -144,7 +131,7 @@ const Dashboard: React.FC = () => {
       setStats({
         hotels: hotelsData.length,
         rooms: roomsData.length,
-        users: usersData.length || 1,
+        users: 1,
         bookings: bookingsData.length,
         totalRevenue,
         monthlyRevenue
@@ -195,17 +182,7 @@ const Dashboard: React.FC = () => {
       // Mock favorites for now
       setFavorites([]);
       
-      // Set users data for admin
-      if (user.role === 'admin') {
-        const adminUser = {
-          id: 'admin-001',
-          name: 'System Administrator',
-          email: 'admin@hotelease.com',
-          role: 'admin',
-          createdAt: new Date().toISOString()
-        };
-        setUsers([adminUser]);
-      }
+
     } catch (error) {
       console.error('Error fetching hotels and rooms:', error);
     } finally {
