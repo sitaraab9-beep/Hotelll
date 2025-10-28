@@ -105,6 +105,8 @@ export default async function handler(req, res) {
 
   const { method, url } = req;
   const path = url.replace('/api', '');
+  
+  console.log(`${method} ${path}`, req.body);
 
   try {
     if (method === 'POST' && path === '/auth/register') {
@@ -127,6 +129,10 @@ export default async function handler(req, res) {
 
     if (method === 'POST' && path === '/auth/login') {
       const { email, password } = req.body;
+      
+      if (!email || !password) {
+        return res.status(400).json({ message: 'Email and password are required' });
+      }
 
       const user = await User.findOne({ email });
       if (!user) {
