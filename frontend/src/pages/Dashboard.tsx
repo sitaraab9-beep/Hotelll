@@ -180,7 +180,6 @@ const Dashboard: React.FC = () => {
       setRooms(mappedRooms);
       
       // Mock favorites for now
-      setFavorites([]);
       
 
     } catch (error) {
