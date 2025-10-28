@@ -51,14 +51,8 @@ const ManagerBookings: React.FC = () => {
   const handleReject = async (bookingId: string) => {
     if (window.confirm('Are you sure you want to reject this booking?')) {
       try {
-        const token = localStorage.getItem('token');
-        const response = await fetch(`/api/bookings/${bookingId}`, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          },
-          body: JSON.stringify({ status: 'cancelled' })
+        const response = await fetch(`/api/bookings/${bookingId}/reject`, {
+          method: 'PUT'
         });
         
         if (response.ok) {

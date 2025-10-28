@@ -434,17 +434,6 @@ export default async function handler(req, res) {
       return res.status(201).json(booking);
     }
 
-    if (method === 'PUT' && path.startsWith('/bookings/')) {
-      const bookingId = path.split('/')[2];
-      const token = req.headers.authorization?.replace('Bearer ', '');
-      if (!token) {
-        return res.status(401).json({ message: 'No token provided' });
-      }
-
-      const booking = await Booking.findByIdAndUpdate(bookingId, req.body, { new: true });
-      return res.json(booking);
-    }
-
     // Approve booking
     if (method === 'PUT' && path.startsWith('/bookings/') && path.endsWith('/approve')) {
       const bookingId = path.split('/')[2];
@@ -464,6 +453,30 @@ export default async function handler(req, res) {
       }
       
       return res.json({ success: true, booking });
+    }
+
+    // Reject booking
+    if (method === 'PUT' && path.startsWith('/bookings/') && path.endsWith('/reject')) {
+      const bookingId = path.split('/')[2];
+      
+      const booking = await Booking.findByIdAndUpdate(
+        bookingId, 
+        { status: 'cancelled' }, 
+        { new: true }
+      );
+      
+      return res.json({ success: true, booking });
+    }
+
+    if (method === 'PUT' && path.startsWith('/bookings/')) {
+      const bookingId = path.split('/')[2];
+      const token = req.headers.authorization?.replace('Bearer ', '');
+      if (!token) {
+        return res.status(401).json({ message: 'No token provided' });
+      }
+
+      const booking = await Booking.findByIdAndUpdate(bookingId, req.body, { new: true });
+      return res.json(booking);
     }
 
     // Download ticket
