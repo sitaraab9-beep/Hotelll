@@ -448,11 +448,21 @@ export default async function handler(req, res) {
     // Approve booking
     if (method === 'PUT' && path.startsWith('/bookings/') && path.endsWith('/approve')) {
       const bookingId = path.split('/')[2];
+      
+      if (!bookingId) {
+        return res.status(400).json({ message: 'Booking ID is required' });
+      }
+      
       const booking = await Booking.findByIdAndUpdate(
         bookingId, 
         { status: 'confirmed' }, 
         { new: true }
       );
+      
+      if (!booking) {
+        return res.status(404).json({ message: 'Booking not found' });
+      }
+      
       return res.json({ success: true, booking });
     }
 
