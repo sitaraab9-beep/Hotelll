@@ -35,14 +35,8 @@ const ManagerBookings: React.FC = () => {
 
   const handleApprove = async (bookingId: string) => {
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`/api/bookings/${bookingId}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ status: 'confirmed' })
+      const response = await fetch(`/api/bookings/${bookingId}/approve`, {
+        method: 'PUT'
       });
       
       if (response.ok) {
