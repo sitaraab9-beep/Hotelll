@@ -78,8 +78,8 @@ const Dashboard: React.FC = () => {
       const roomsData = roomsResponse.ok ? await roomsResponse.json() : [];
 
       // Fetch bookings and users for admin
-      let bookingsData = [];
-      let usersData = [];
+      let bookingsData: any[] = [];
+      let usersData: any[] = [];
       
       if (user.role === 'admin') {
         try {
